@@ -1,0 +1,25 @@
+Package: KFSMLE
+Type: Package
+Title: Fast Kalman Filter and Smoother Maximum Likelihood Estimator
+Version: 0.0.1
+Date: 2023-12-18
+Authors@R: c(
+    person("Domenic", "Franjic", email = "IhreEmail@Beispiel.de", role = c("aut", "cre")),
+    person("Karsten", "Schweikert", role = "ctb"),
+    person("Thomas", "Dimpfl", role = "ctb"))
+Maintainer: Domenic Franjic <franjic@uni-hohenheim.de>
+Description: The package implements the univariate representation of the multivariate Kalman Filter and Smoother by Koopman and Durbin to implement a fast Maximum Likelihood estimation approach using Eigen and NLopt.
+License: GPL-3
+SystemRequirements: NLopt (>= 2.4.2) - not required for Windows as it is included in the package
+Imports:
+    Rcpp (>= 1.0.0)
+LinkingTo: Rcpp, RcppEigen, BH
+Depends:
+    R (>= 3.5.0)
+Encoding: UTF-8
+RoxygenNote: 7.2.3
+LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr, rmarkdown
