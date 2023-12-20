@@ -1,0 +1,68 @@
+---
+title: "KFSMLE"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{KFSMLE}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(KFSMLE)
+```
+
+# KFSMLE Package Vignette
+
+## Overview
+
+The `KFSMLE` package provides a fast implementation of the Kalman Filter and Smoother Maximum Likelihood Estimation (KFSMLE) using the NLopt optimization library. It is designed for advanced statistical analysis in time series and econometrics.
+
+### Main Function: NLoptKFS
+
+The primary function `NLoptKFS` optimizes parameters for KFS models. 
+
+#### Parameters:
+- `start`: Starting values (matrix).
+- `X`: Data matrix.
+- `tau`: Parameter vector.
+- `m`, `d`: Dimension parameters.
+- `xtol`: Algorithm tolerance.
+- `stop_val`: Stopping value.
+- `algorithm`: Optimization algorithm (default "LN_NELDERMEAD").
+- `hessian`: Whether to compute the Hessian matrix.
+- `step_size`: Step size for Hessian computation.
+- `verbose`: Verbose output.
+
+### Example
+
+Using the provided datasets `start`, `data`, and `tau`:
+
+```R
+Minimum <- KFSMLE::NLoptKFS(start = start, X = data, tau = tau, m = 2, d = 2, xtol = 10e-4,
+                      stop_val = 10e-10, algorithm = "LN_NELDERMEAD", hessian = TRUE,
+                      step_size = 1e-04, verbose = FALSE)
+print(Minimum)
+```
+
+### Advanced Usage
+
+- `PrintAlgorithms`: This function lists all available optimization algorithms with descriptions. It helps users choose the most suitable algorithm for their specific use case.
+
+### References
+
+This implementation is based on the work of Koopman, S. J., & Durbin, J. (2010), specifically their paper on "A univariate representation of the multivariate Kalman Filter and Smoother". 
+
+### Note
+
+Direct calls to the internal `FastOptim` function are discouraged. Users should interact with the package through `NLoptKFS` for proper error handling and parameter management.
+
+### Included Data
+
+The package comes with sample data sets: `start`, `data`, and `tau`, which are used for demonstration and testing purposes.
