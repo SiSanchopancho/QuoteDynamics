@@ -1,13 +1,9 @@
 @echo off
-cd inst\include
+echo Entpacken von Eigen...
+PowerShell -Command "Expand-Archive -Path .\inst\include\Eigen.zip -DestinationPath .\inst\include\Eigen -Force"
 
-echo Unzipping Eigen...
-unzip -o Eigen.zip -d Eigen
+echo Entpacken von NLopt...
+PowerShell -Command "Expand-Archive -Path .\inst\include\NLopt.zip -DestinationPath .\inst\include\NLopt -Force"
 
-echo Unzipping NLopt...
-unzip -o NLopt.zip -d NLopt
-
-cd ..\..\..
-
-echo Setup completed.
+echo Einrichtung abgeschlossen.
 pause
