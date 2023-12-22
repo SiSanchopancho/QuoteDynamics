@@ -8,7 +8,7 @@ echo "Unzipping Eigen..."
 unzip -o Eigen.zip -d Eigen
 
 echo "Unzipping NLopt..."
-unzip -o NLopt.zip -d NLopt
+unzip -o nlopt.zip -d nlopt
 
 # Navigate back to the root directory
 cd ../../..

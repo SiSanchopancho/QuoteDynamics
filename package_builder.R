@@ -6,7 +6,6 @@ library(RcppEigen)
 
 setwd(dirname(getActiveDocumentContext()$path))
 
-setwd("./KFSMLEENgineWindows")
 
 # Compile Rcpp attributes first
 Rcpp::compileAttributes()

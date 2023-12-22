@@ -6,4 +6,4 @@ src/*.o
 src/*.so
 src/*.dll
 inst/include/Eigen
-inst/include/NLopt
+inst/include/nlopt
