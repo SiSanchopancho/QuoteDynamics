@@ -15,14 +15,14 @@ devtools::document()
 
 # Install the package (this also builds it)
 devtools::build()
-devtools::load_all()
-devtools::check()
+# devtools::load_all()
+# devtools::check()
 
 detach("package:KFSMLE", unload = TRUE)
 
 .rs.restartR()
 
-install.packages("../KFSMLE_0.0.1.tar.gz", repos = NULL, type = "source")
+install.packages("../KFSMLE_0.0.2.tar.gz", repos = NULL, type = "source")
 
 # Restart R session before loading the package# Restart R session before verbose = loading the package
 .rs.restartR()
@@ -34,7 +34,7 @@ ls("package:KFSMLE")
 # Test the function
 
 PrintAlgorithms()
-Minimum <- KFSMLE::NLoptKFS(start = start, X = data, tau = tau, m = 2, d = 2, xtol = 10e-4,
+Minimum <- KFSMLE::NLoptKFS(start = start, X = data, tau = tau, xtol = 10e-4,
                             stop_val = 10e-10, algorithm = "LN_NELDERMEAD", hessian = TRUE,
                             step_size = 1e-04, verbose = FALSE)
 print(Minimum)

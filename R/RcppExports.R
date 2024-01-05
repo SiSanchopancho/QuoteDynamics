@@ -8,13 +8,11 @@
 #' @param startR Starting values
 #' @param XR Data Matrix
 #' @param tauR Parameter vector
-#' @param m Parameter
-#' @param d Parameter
 #' @param xtol Algorithm tolerance
 #' @param stop_val Stopping rule
 #' @return Returns minimum value (changes start in place)
 #' @export
-FastOptim <- function(startR, XR, tauR, m, d, xtol, stop_val, algorithm_id, hessian, step_size, log) {
-    .Call('_KFSMLE_FastOptim', PACKAGE = 'KFSMLE', startR, XR, tauR, m, d, xtol, stop_val, algorithm_id, hessian, step_size, log)
+FastOptim <- function(startR, XR, tauR, xtol, stop_val, algorithm_id, hessian, step_size, log) {
+    .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, xtol, stop_val, algorithm_id, hessian, step_size, log)
 }
 

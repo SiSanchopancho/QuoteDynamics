@@ -1,6 +1,6 @@
 ## usethis namespace: start
 #' @importFrom Rcpp sourceCpp
-#' @useDynLib KFSMLE
+#' @useDynLib QuoteDynamics
 ## usethis namespace: end
 NULL
 
@@ -20,6 +20,15 @@ NULL
 #' @format A data frame with 15 rows and 1 column
 #' @source Simulated
 #' @name start
+NULL
+
+#' Named Parameter Starting List
+#'
+#' A named list containing the starting values
+#'
+#' @format A named list
+#' @source Simulated
+#' @name start_list
 NULL
 
 #' Parameter vector

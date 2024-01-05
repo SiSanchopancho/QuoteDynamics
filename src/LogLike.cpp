@@ -3,19 +3,25 @@
 double LogLike::LL(
 	VectorXd param,
 	MatrixXd X,
-	VectorXd tau,
-	double m,
-	unsigned d
+	VectorXd tau
 ) {
 
-	VectorXd spread = param(seq(0, 1));
-	VectorXd ct(4);
-	ct(0) = -spread(0) / 2.;
-	ct(1) = spread(0) / 2.;
-	ct(2) = -spread(1) / 2.;
-	ct(3) = spread(1) / 2.;
-	VectorXd alpha = param(seq(2, 5));
+	// Set the parameters
+
+	const int m = X.cols() / 2;
+
+	VectorXd spread = param.head(m);
+
+	VectorXd ct(2 * m);
+
+	ct(seq(0, 2 * m - 1, 2)) = -0.5 * spread;
+	ct(seq(1, 2 * m - 1, 2)) = 0.5 * spread;
+
+	VectorXd alpha = param(seq(m, (3 * m) - 1));
+
 	MatrixXd Cmat = MatrixXd::Zero(2, 2);
+
+	MatrixXd GGt = MatrixXd::Zero(2, 2);
 
 	int ind = 0;
 
@@ -23,58 +29,50 @@ double LogLike::LL(
 
 		for (int j = 0; j <= i; j++) {
 
-			Cmat(i, j) = param(6 + ind);
+			Cmat(i, j) = param(3 * m + ind);
 			++ind;
 
 		}
 	}
 
-	MatrixXd Omega1 = Cmat * Cmat.transpose();
+	GGt.bottomRightCorner(Cmat.rows(), Cmat.cols()) = Cmat * Cmat.transpose();
 
-	Cmat.setZero();
 
-	ind = 0;
+	for (int mm = 1; mm < m; ++mm) {
 
-	for (int i = 0; i < Cmat.rows(); i++) {
+		Cmat.setZero();
 
-		for (int j = 0; j <= i; j++) {
+		for (int i = 0; i < Cmat.rows(); i++) {
 
-			Cmat(i, j) = param(9 + ind);
-			++ind;
+			for (int j = 0; j <= i; j++) {
 
+				Cmat(i, j) = param(3 * m + ind);
+				++ind;
+
+			}
 		}
+
+		GGt.conservativeResize(GGt.rows() + Cmat.rows(), GGt.cols() + Cmat.cols());
+		GGt.topRightCorner(Cmat.rows() * mm, Cmat.cols()).setZero();
+		GGt.bottomLeftCorner(Cmat.rows(), Cmat.cols() * mm).setZero();
+		GGt.bottomRightCorner(Cmat.rows(), Cmat.cols()) = Cmat * Cmat.transpose();
+
 	}
-
-	MatrixXd Omega2 = Cmat * Cmat.transpose();
-
-	MatrixXd GGt = MatrixXd::Zero(2 * Cmat.rows(), 2 * Cmat.rows());
-	GGt.topLeftCorner(Cmat.rows(), Cmat.rows()) = Omega1;
-	GGt.bottomRightCorner(Cmat.rows(), Cmat.rows()) = Omega2;
 
 	VectorXd dt = VectorXd::Zero(2);
-	MatrixXd Tt = MatrixXd::Zero(d, d);
+	MatrixXd Tt = MatrixXd::Zero(2, 2);
 
-	ind = 0;
+	Tt(0, 0) = 1.;
 
-	for (int d1 = 0; d1 < d; ++d1) {
-
-		for (int d2 = 0; d2 < d; ++d2) {
-
-			Tt(d2, d1) = ind % 4 == 0 ? 1. : 0.;
-			++ind;
-
-		}
-	}
-
-	double sigma = param(12);
-	double delta1 = param(13);
-	double delta2 = param(14);
+	double sigma = param(last - 2);
+	double delta1 = param(last - 1);
+	double delta2 = param(last);
 
 	// Dummies
 
 	// Integers
 
-	int T = X.rows(), N = X.cols();
+	int T = X.rows(), N = X.cols(), d = 2;
 
 	// Matrices
 

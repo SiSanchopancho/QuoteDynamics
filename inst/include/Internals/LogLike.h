@@ -27,7 +27,8 @@ using namespace Filtering;
 namespace LogLike {
 
     // Calculate log-likelihood based on provided parameters and data
-    double LL(VectorXd param, MatrixXd X, VectorXd tau, double m, unsigned d);
+
+    double LL(VectorXd param, MatrixXd X, VectorXd tau);
 
 };
 #endif /* defined(LOGLIKE) */

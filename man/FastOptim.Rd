@@ -8,8 +8,6 @@ FastOptim(
   startR,
   XR,
   tauR,
-  m,
-  d,
   xtol,
   stop_val,
   algorithm_id,
@@ -24,10 +22,6 @@ FastOptim(
 \item{XR}{Data Matrix}
 
 \item{tauR}{Parameter vector}
-
-\item{m}{Parameter}
-
-\item{d}{Parameter}
 
 \item{xtol}{Algorithm tolerance}
 
