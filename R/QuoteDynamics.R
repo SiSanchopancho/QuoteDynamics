@@ -149,5 +149,5 @@ quoteDynOptim <- function(start, X, tau, xtol = 10e-5, stop_val = 10e-10, algori
   }
 
   algorithm_id <- nlopt_algorithms[algorithm]
-  .Call('_KFSMLE_FastOptim', PACKAGE = 'KFSMLE', startR, XR, tauR, xtol, stop_val, algorithm_id, hessian, step_size, verbose)
+  .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, xtol, stop_val, algorithm_id, hessian, step_size, verbose)
 }
