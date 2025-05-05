@@ -1,9 +1,17 @@
+---
+title: "README"
+output: html_document
+date: "2023-12-20"
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-# QuoteDynamics Package
+# KFSMLE Package
 
 ## Overview
-QuoteDynamics is an R package providing fast Kalman Filter and Smoother Maximum Likelihood Estimation using the NLopt optimization library.
+KFSMLE is an R package providing fast Kalman Filter and Smoother Maximum Likelihood Estimation using the NLopt optimization library.
 
 ## Installation
 
@@ -28,16 +36,16 @@ brew install nlopt
 ```
 
 ## Usage
-To use the QuoteDynamics package, first load it into your R session:
+To use the KFSMLE package, first load it into your R session:
 
 ```R
-library(QuoteDynamics)
+library(KFSMLE)
 ```
 
 You can then call the main function NLoptKFS with appropriate parameters. Here is a working example using the simulated data that is included in the package.
 
 ```R
-Minimum <-     QuoteDynamics::QuoteDynamics(start = start, X = data, tau = tau, xtol = 10e-4,
+Minimum <- KFSMLE::NLoptKFS(start = start, X = data, tau = tau, m = 2, d = 2, xtol = 10e-4,
                             stop_val = 10e-10, algorithm = "LN_NELDERMEAD", hessian = TRUE,
                             step_size = 1e-04, verbose = FALSE)
 print(Minimum)

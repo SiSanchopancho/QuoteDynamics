@@ -1,6 +1,7 @@
 Package: QuoteDynamics
 Type: Package
-Title: Fast Kalman Filter and Smoother Maximum Likelihood Estimator for Quote Dynamics Moedls
+Title: Fast Kalman Filter and Smoother Maximum Likelihood Estimator for
+        Quote Dynamics Moedls
 Version: 0.0.2
 Date: 2023-12-18
 Authors@R: c(
@@ -10,16 +11,18 @@ Authors@R: c(
 Maintainer: Domenic Franjic <franjic@uni-hohenheim.de>
 Description: The package implements the univariate representation of the multivariate Kalman Filter and Smoother by Koopman and Durbin to implement a fast Maximum Likelihood estimation approach using Eigen and NLopt in the context of quote dynamics models.
 License: GPL-3
-SystemRequirements: NLopt (>= 2.4.2) - not required for Windows as it is included in the package
-Imports:
-    Rcpp (>= 1.0.0)
+SystemRequirements: NLopt (>= 2.4.2) - not required for Windows as it
+        is included in the package
+Imports: Rcpp (>= 1.0.0)
 LinkingTo: Rcpp, RcppEigen, BH
-Depends:
-    R (>= 3.5.0)
+Depends: R (>= 3.5.0)
 Encoding: UTF-8
 RoxygenNote: 7.2.3
 LazyData: true
-Suggests: 
-    knitr,
-    rmarkdown
+Suggests: knitr, rmarkdown
 VignetteBuilder: knitr, rmarkdown
+NeedsCompilation: yes
+Packaged: 2024-01-05 16:23:35 UTC; 520K-User
+Author: Domenic Franjic [aut, cre],
+  Karsten Schweikert [ctb],
+  Thomas Dimpfl [ctb]

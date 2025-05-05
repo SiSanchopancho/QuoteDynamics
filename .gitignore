@@ -8,3 +8,6 @@ src/*.dll
 inst/include/Eigen
 inst/include/nlopt
 test.log
+IBM_quotes_100ms_2021-01-04.RData
+emp_log.log
+empiric_test.R
