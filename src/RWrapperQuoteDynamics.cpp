@@ -1,4 +1,25 @@
-#define _USE_MATH_DEFINES // If you need some math constants
+//' SPDX-License-Identifier: GPL-3.0-or-later */
+//'
+//' Copyright (c) 2025 Domenic Franjic
+//'
+//' This file is part of QuoteDynamics.
+//'
+//' QuoteDynamics is free software: you can redistribute it
+//' and/or modify it under the terms of the GNU General Public License
+//' as published by the Free Software Foundation, either version 3
+//' of the License, or (at your option) any later version.
+//'
+//' QuoteDynamics is distributed in the hope that it will be useful,
+//' but WITHOUT ANY WARRANTY; without even the implied warranty
+//' of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+//' See the GNU General Public License for more details.
+//'
+//' You should have received a copy of the GNU General Public License
+//' along with QuoteDynamics.  If not, see <https://www.gnu.org/licenses/>.
+//' @docType package
+//' @name QuoteDynamics
+
+#define _USE_MATH_DEFINES
 
 // Defin PI when using g++
 #ifndef M_PI
@@ -7,39 +28,27 @@
 
 #define NLOPT_DLL
 
-// Externakl includes
-
-#include <stdlib.h>
-#include <cfloat>
-#include <iostream>
-#include <Eigen/Eigen>
-#include <math.h>
-#include <nlopt/src/api/nlopt.h>
-#include <RcppCommon.h>
+#include <vector>
+#include <climits>
 #include <Rcpp.h>
 #include <RcppEigen.h>
+#include <Eigen/Eigen>
+#include <nlopt/src/api/nlopt.h>
 #include "QuoteDynamics_types.h"
+#include "Internals/LogLike.h"
 
-// Internal Incldues
-
-#include "Internals/DataHandle.h" // Data Handlers (Mean, Var, Print Matrices, etc.)
-#include "Internals/Filtering.h" // Univariate representataion of multivariate KFS according to Koopman and Durbin (2010)
-#include "Internals/Orders.h" // Functions to infer on "orders" of the proces (number of factors, VAR order, etc.)
-#include "Internals/LogLike.h" // Functions to infer on "orders" of the proces (number of factors, VAR order, etc.)
-
-using namespace DataHandle;
-using namespace Filtering;
-using namespace Orders;
 using namespace LogLike;
 using namespace Rcpp;
 
+/** Data structure parsed to NLopt's optimisation routine */
 struct OptimData {
     Eigen::MatrixXd X;
     Eigen::VectorXd tau;
     bool log;
+    Eigen::MatrixXd ind_matrix;
 };
 
-
+/** Wrapper template to parse results back into R */
 namespace Rcpp {
     template <>
     SEXP wrap(const Results& x) {
@@ -51,6 +60,16 @@ namespace Rcpp {
     }
 }
 
+
+/**  NLopt objective function wrapper
+*
+* @param n Size of the paramter vector
+* @param x Pointer to the data of the parameter vector
+* @param grad Pointer to the data of the gradient
+* @param data Pointer to the data structure that holds additional function parameters of the actual objective function
+*
+* @return Objective function value of the current parameter estimate
+* */
 double objective_function(unsigned n, const double* x, double* grad, void* data)
 {
 
@@ -61,7 +80,7 @@ double objective_function(unsigned n, const double* x, double* grad, void* data)
     Eigen::VectorXd parameters = Eigen::Map<const Eigen::VectorXd>(x, n);
 
     // Compute the LL value using parameters as the model parameters
-    double ll = LL(parameters, data_in->X, data_in->tau);
+    double ll = MVLL(parameters, data_in->X, data_in->tau, data_in->ind_matrix);
 
     if (data_in->log) {
 
@@ -73,6 +92,13 @@ double objective_function(unsigned n, const double* x, double* grad, void* data)
     return ll;
 }
 
+/** Hessian computation
+*
+* @param parameters Reference to the Eigen::VectorXd that holds the (final) parameter estimates
+* @param data Pointer to the data structure that holds additional function parameters of the actual objective function 
+* @param h Step-size for computing the Hessian
+* @return Eigen::MatrixXd Hessian of the objective function at the estimate
+*/
 Eigen::MatrixXd ComputeHessian(const Eigen::VectorXd& parameters, void* data, double h) {
 
     // Load in the data
@@ -91,9 +117,9 @@ Eigen::MatrixXd ComputeHessian(const Eigen::VectorXd& parameters, void* data, do
             parameters_plus(i) += h; parameters_plus(j) += h;
             parameters_minus(i) -= h; parameters_minus(j) -= h;
 
-            double f1 = LL(parameters_plus, data_in->X, data_in->tau);
-            double f2 = LL(parameters, data_in->X, data_in->tau);
-            double f3 = LL(parameters_minus, data_in->X, data_in->tau);
+            double f1 = MVLL(parameters_plus, data_in->X, data_in->tau, data_in->ind_matrix);
+            double f2 = MVLL(parameters, data_in->X, data_in->tau, data_in->ind_matrix);
+            double f3 = MVLL(parameters_minus, data_in->X, data_in->tau, data_in->ind_matrix);
             Hessian(i, j) = Hessian(j, i) = (f1 - 2 * f2 + f3) / (h * h);
 
         }
@@ -109,53 +135,62 @@ Eigen::MatrixXd ComputeHessian(const Eigen::VectorXd& parameters, void* data, do
 //' @param startR Starting values
 //' @param XR Data Matrix
 //' @param tauR Parameter vector
+//' @param ind_matrix_R Identifier matrix
 //' @param xtol Algorithm tolerance
 //' @param stop_val Stopping rule
 //' @return Returns minimum value (changes start in place)
 //' @export
 // [[Rcpp::export]]
-Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, double xtol, double stop_val, int algorithm_id, bool hessian, double step_size, bool log) {
+Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, double xtol, double stop_val, int max_eval, int algorithm_id, bool hessian, double step_size, bool log) {
     
+    /* Initialisation */
+
     // Convert R types to Eigen types
-    
     Eigen::VectorXd estimate(Eigen::VectorXd::Map(startR.begin(), startR.size()));
     Eigen::Map<Eigen::MatrixXd> X(Eigen::MatrixXd::Map(XR.begin(), XR.rows(), XR.cols()));
     Eigen::Map<Eigen::VectorXd> tau(Eigen::VectorXd::Map(tauR.begin(), tauR.size()));
+    Eigen::Map<Eigen::MatrixXd> ind_matrix(Eigen::MatrixXd::Map(ind_matrix_R.begin(), ind_matrix_R.rows(), ind_matrix_R.cols()));
 
+    // Handle the case where meax_eval has been disabled and set it to INT_MAX (DO NOT FULLY DISABLE max_eval AS SOME ALGORITHMS WILL NOT TERMINATE!)
+    if (max_eval == -1) {
+      max_eval = INT_MAX;
+    }
+
+    // Store all the data in an NLopt-convinient struct
     OptimData data;
     data.X = X;
     data.tau = tau;
     data.log = log;
+    data.ind_matrix = ind_matrix;
 
-    nlopt_opt opt;
+    /* NLopt Set-Up */
 
-    opt = nlopt_create(static_cast<nlopt_algorithm>(algorithm_id), estimate.size()); /* algorithm and dimensionality */
-    std::vector<double> initial_guess(estimate.data(), estimate.data() + estimate.size());
+    nlopt_opt opt; // Create object
+    opt = nlopt_create(static_cast<nlopt_algorithm>(algorithm_id), estimate.size()); // Set the optimisation algorithm and the dimensionality (number of parameters) of the problem
+    std::vector<double> initial_guess(estimate.data(), estimate.data() + estimate.size()); // Map the Eigen::VectorXd stored data into a std::vector for NLopt
+    nlopt_set_min_objective(opt, objective_function, &data); // Creat the minimisation problem
+    nlopt_set_xtol_rel(opt, xtol); // Set step-tolerance
+    nlopt_set_stopval(opt, stop_val); // Set obj. function value tolerance
+    nlopt_set_maxeval(opt, max_eval); // Set maximum number of obj. function evaluation
+    double minf; // Minimum obj. value at return
 
-    nlopt_set_min_objective(opt, objective_function, &data);
+    /* Optimisation */
 
-    nlopt_set_xtol_rel(opt, xtol);
-
-    nlopt_set_stopval(opt, stop_val);
-
-    double minf; /* `*`the` `minimum` `objective` `value,` `upon` `return`*` */
-    if (nlopt_optimize(opt, estimate.data(), &minf) < 0) {
+    if (nlopt_optimize(opt, estimate.data(), &minf) < 0) { // Logic block for handling the case where NLopt fails
         Rcpp::stop("NLopt failed!");
     }
+
+    /* Create an output object */
 
     Results out;
     out.min_val = minf;
     out.estimate = estimate;
 
-    if (hessian)
-    {
-        // Compute hessian
-
+    if (hessian) {// Compute hessian
         out.hessian = ComputeHessian(out.estimate, &data, step_size);
-
     }
 
-    nlopt_destroy(opt);
+    nlopt_destroy(opt); // Destroy NLopt object properly!
 
     return out;
 }

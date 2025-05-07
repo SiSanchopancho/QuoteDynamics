@@ -13,27 +13,29 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // FastOptim
-Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, double xtol, double stop_val, int algorithm_id, bool hessian, double step_size, bool log);
-RcppExport SEXP _QuoteDynamics_FastOptim(SEXP startRSEXP, SEXP XRSEXP, SEXP tauRSEXP, SEXP xtolSEXP, SEXP stop_valSEXP, SEXP algorithm_idSEXP, SEXP hessianSEXP, SEXP step_sizeSEXP, SEXP logSEXP) {
+Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, double xtol, double stop_val, int max_eval, int algorithm_id, bool hessian, double step_size, bool log);
+RcppExport SEXP _QuoteDynamics_FastOptim(SEXP startRSEXP, SEXP XRSEXP, SEXP tauRSEXP, SEXP ind_matrix_RSEXP, SEXP xtolSEXP, SEXP stop_valSEXP, SEXP max_evalSEXP, SEXP algorithm_idSEXP, SEXP hessianSEXP, SEXP step_sizeSEXP, SEXP logSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericVector >::type startR(startRSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type XR(XRSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type tauR(tauRSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type ind_matrix_R(ind_matrix_RSEXP);
     Rcpp::traits::input_parameter< double >::type xtol(xtolSEXP);
     Rcpp::traits::input_parameter< double >::type stop_val(stop_valSEXP);
+    Rcpp::traits::input_parameter< int >::type max_eval(max_evalSEXP);
     Rcpp::traits::input_parameter< int >::type algorithm_id(algorithm_idSEXP);
     Rcpp::traits::input_parameter< bool >::type hessian(hessianSEXP);
     Rcpp::traits::input_parameter< double >::type step_size(step_sizeSEXP);
     Rcpp::traits::input_parameter< bool >::type log(logSEXP);
-    rcpp_result_gen = Rcpp::wrap(FastOptim(startR, XR, tauR, xtol, stop_val, algorithm_id, hessian, step_size, log));
+    rcpp_result_gen = Rcpp::wrap(FastOptim(startR, XR, tauR, ind_matrix_R, xtol, stop_val, max_eval, algorithm_id, hessian, step_size, log));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_QuoteDynamics_FastOptim", (DL_FUNC) &_QuoteDynamics_FastOptim, 9},
+    {"_QuoteDynamics_FastOptim", (DL_FUNC) &_QuoteDynamics_FastOptim, 11},
     {NULL, NULL, 0}
 };
 

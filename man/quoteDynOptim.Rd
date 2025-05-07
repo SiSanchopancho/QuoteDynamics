@@ -8,32 +8,38 @@ quoteDynOptim(
   start,
   X,
   tau,
-  xtol = 1e-04,
-  stop_val = 1e-09,
+  ident_mat,
+  xtol = 1e-08,
+  stop_val = 1e-08,
+  max_eval = 100000L,
   algorithm = "LN_NELDERMEAD",
   hessian = TRUE,
-  step_size = 1e-04,
+  step_size = 1e-08,
   verbose = FALSE
 )
 }
 \arguments{
-\item{start}{Numeric vector of starting values.}
+\item{start}{Vector of starting values.}
 
-\item{X}{Numeric matrix of data.}
+\item{X}{Matrix of data.}
 
-\item{tau}{Numeric vector of parameter values.}
+\item{tau}{Vector of parameter values.}
 
-\item{xtol}{Numeric, the algorithm tolerance.}
+\item{ident_mat}{Selection matrix.}
 
-\item{stop_val}{Numeric, the stopping value.}
+\item{xtol}{Algorithm tolerance.}
 
-\item{algorithm}{Character string, the optimization algorithm to use (default: "LN_NELDERMEAD").}
+\item{stop_val}{Stopping value.}
 
-\item{hessian}{Logical, whether to compute the hessian matrix.}
+\item{max_eval}{Maximum number of obj. function evaluations.}
 
-\item{step_size}{Numeric, step size for hessian computation.}
+\item{algorithm}{Character string, the optimization algorithm to use.}
 
-\item{verbose}{Logical, whether to print verbose output.}
+\item{hessian}{Whether to compute the hessian matrix.}
+
+\item{step_size}{Step size for hessian computation.}
+
+\item{verbose}{Whether to print verbose output.}
 }
 \value{
 A list containing the minimum value found, estimated parameters, and optionally the hessian matrix.
@@ -46,5 +52,6 @@ Maximum Likelihood Estimation using the NLopt optimization library.
 start <- c(1, 1)
 data <- matrix(rnorm(100), ncol = 10)
 tau <- runif(10)
-result <- NLoptKFS(start, data, tau, 2, 2)
+ident_mat <- matrix(round(runif(100 * 10, -0.5, 1.5), 0), 100, 10)
+result <- NLoptKFS(start, data, tau, ident_mat)
 }

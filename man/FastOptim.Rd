@@ -8,8 +8,10 @@ FastOptim(
   startR,
   XR,
   tauR,
+  ind_matrix_R,
   xtol,
   stop_val,
+  max_eval,
   algorithm_id,
   hessian,
   step_size,
@@ -22,6 +24,8 @@ FastOptim(
 \item{XR}{Data Matrix}
 
 \item{tauR}{Parameter vector}
+
+\item{ind_matrix_R}{Identifier matrix}
 
 \item{xtol}{Algorithm tolerance}
 

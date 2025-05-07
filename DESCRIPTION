@@ -2,8 +2,8 @@ Package: QuoteDynamics
 Type: Package
 Title: Fast Kalman Filter and Smoother Maximum Likelihood Estimator for
         Quote Dynamics Moedls
-Version: 0.0.2
-Date: 2023-12-18
+Version: 0.0.4
+Date: 2025-05-05
 Authors@R: c(
     person("Domenic", "Franjic", email = "IhreEmail@Beispiel.de", role = c("aut", "cre")),
     person("Karsten", "Schweikert", role = "ctb"),
@@ -22,7 +22,7 @@ LazyData: true
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr, rmarkdown
 NeedsCompilation: yes
-Packaged: 2024-01-05 16:23:35 UTC; 520K-User
+Packaged: 2025-05-05 16:23:35 UTC; 520K-User
 Author: Domenic Franjic [aut, cre],
   Karsten Schweikert [ctb],
   Thomas Dimpfl [ctb]

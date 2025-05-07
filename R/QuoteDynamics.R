@@ -59,60 +59,64 @@ PrintAlgorithms <- function() {
 #' This function provides a fast implementation of the Kalman Filter and Smoother
 #' Maximum Likelihood Estimation using the NLopt optimization library.
 #'
-#' @param start Numeric vector of starting values.
-#' @param X Numeric matrix of data.
-#' @param tau Numeric vector of parameter values.
-#' @param xtol Numeric, the algorithm tolerance.
-#' @param stop_val Numeric, the stopping value.
-#' @param algorithm Character string, the optimization algorithm to use (default: "LN_NELDERMEAD").
-#' @param hessian Logical, whether to compute the hessian matrix.
-#' @param step_size Numeric, step size for hessian computation.
-#' @param verbose Logical, whether to print verbose output.
+#' @param start Vector of starting values.
+#' @param X Matrix of data.
+#' @param tau Vector of parameter values.
+#' @param ident_mat Selection matrix.
+#' @param xtol Algorithm tolerance.
+#' @param stop_val Stopping value.
+#' @param max_eval Maximum number of obj. function evaluations.
+#' @param algorithm Character string, the optimization algorithm to use.
+#' @param hessian Whether to compute the hessian matrix.
+#' @param step_size Step size for hessian computation.
+#' @param verbose Whether to print verbose output.
 #' @return A list containing the minimum value found, estimated parameters, and optionally the hessian matrix.
 #' @export
 #' @examples
 #' start <- c(1, 1)
 #' data <- matrix(rnorm(100), ncol = 10)
 #' tau <- runif(10)
-#' result <- NLoptKFS(start, data, tau, 2, 2)
-quoteDynOptim <- function(start, X, tau, xtol = 10e-5, stop_val = 10e-10, algorithm = "LN_NELDERMEAD", hessian = TRUE, step_size = 10e-5, verbose = FALSE) {
+#' ident_mat <- matrix(round(runif(100 * 10, -0.5, 1.5), 0), 100, 10)
+#' result <- NLoptKFS(start, data, tau, ident_mat)
+quoteDynOptim <- function(start, X, tau, ident_mat, xtol = 1e-8, stop_val = 1e-8, max_eval = 100000L, algorithm = "LN_NELDERMEAD", hessian = TRUE, step_size = 1e-8, verbose = FALSE) {
 
-  # Convert inputs to matrices
+  # Start error handling block #
+
+  N <- dim(X)[2]
+  M <- N / 2
+  T <- dim(X)[1]
+
+  # Convert inputs to matrices #
 
   errorOccurred <- FALSE
-
-  ## If start is a list of named parameters, convert start to a vector
 
   XR <- try(as.matrix(X), silent = TRUE)
   if (inherits(XR, "try-error")) {
     errorOccurred <- TRUE
   }
 
-  if(is.list(start) && !is.data.frame(start)){
+  # Logic block for handling different input types for the start vector
+
+  if(is.list(start) && !is.data.frame(start)){ # Logic for converting the start values into a matrix if its provided as a named list
 
     # Check the names of the parameter list
-
-    if (sum(names(start) == c("spread", "alpha", "Cmat.lowerTriangular", "sigma", "delta1", "delta2")) == 6) {
-      cat("An error occurred in the conversion of the starting parameters list. The elements of the starting parameter",
+    if (!setequal(names(start), c("spread","alpha","Cmat.lowerTriangular","sigma","delta1","delta2"))) {
+      stop("An error occurred in the conversion of the starting parameters list. The elements of the starting parameter",
           "list must follow this naming convention: \n names(start_list) = c(\"spread\", \"alpha\", \"Cmat.lowerTriangular\",",
           "\"sigma\", \"delta1\", \"delta2\")")
-      return()
     }
 
     # Check the dimensions of the parameters stored in the list
 
-    M <- dim(X)[2] / 2
-
     if (length(start$spread) != M ||
         length(start$alpha) != 2 * M ||
-        length(start$Cmat.lowerTriangular) == 3 * M ||
+        length(start$Cmat.lowerTriangular) != 3 * M ||
         length(start$sigma) != 1 ||
         length(start$delta1) != 1 ||
-        length(start$delta1) != 1) {
-      cat("An error occurred in the conversion of the starting parameters list. The parameters appear to have false dimensions.",
+        length(start$delta2) != 1) {
+      stop("An error occurred in the conversion of the starting parameters list. The parameters appear to have false dimensions.",
           "Given the data you provided, the elements of start_list should have the following dimensions: |start_list$spread| = ", M,
           ", |alpha| = ", 2*M, ", |Cmat.lowerTriangular| = ", 3*M, ", |sigma| = ", 1, ", |delta1| = ", 1, ", |delta2| = ", 1)
-      return()
     }
 
     startR <- matrix(NaN, length(unlist(start)), 1)
@@ -122,11 +126,14 @@ quoteDynOptim <- function(start, X, tau, xtol = 10e-5, stop_val = 10e-10, algori
     startR[3*M + 10, ] <- start$sigma
     startR[3*M + 11, ] <- start$delta1
     startR[3*M + 12, ] <- start$delta2
-  }else{
+
+  }else{ # Logic for converting the start values into a matrix if its provided as a vector/matrix
+
     startR <- if (!errorOccurred) try(as.matrix(start), silent = TRUE)
     if (inherits(startR, "try-error")) {
       errorOccurred <- TRUE
     }
+
   }
 
   tauR <- if (!errorOccurred) try(as.matrix(tau), silent = TRUE) else NULL
@@ -134,20 +141,112 @@ quoteDynOptim <- function(start, X, tau, xtol = 10e-5, stop_val = 10e-10, algori
     errorOccurred <- TRUE
   }
 
+  ident_mat_R <- try(matrix(as.numeric(ident_mat), dim(ident_mat)[1], dim(ident_mat)[2]), silent = TRUE)
+  if (inherits(ident_mat_R, "try-error")) {
+    errorOccurred <- TRUE
+  }
+
   # If an error occurred, terminate
   if (errorOccurred) {
-    cat("An error occurred in matrix conversion. \"start\", \"X\", and \"tau\" must be convertable to matrices. \n")
-    return()
+    stop("An error occurred in matrix conversion. \"start\", \"X\", \"tau\", and \"ident_mat_R\" must be convertable to matrices. \n")
   }
 
-  if(!is.matrix(XR) || !is.matrix(startR) || !is.matrix(tauR)){
+  # Dimension checks #
 
-    print("start, X, and tau must be convertible to matrices!")
-
-    return()
-
+  if(dim(tauR)[1] != T){
+    stop(paste0("tau must be of length ", T, " but is ", dim(tauR)[1]))
   }
 
+  if(dim(ident_mat_R)[2] != M || dim(ident_mat_R)[1] != T){
+    stop(paste0("ident_mat_R must be of dimensions ", T, "x", M, " but is ", dim(ident_mat_R)[1], "x", dim(ident_mat_R)[2]))
+  }
+
+  # Check of the elements of the indicator matrix
+
+  if(!all((ident_mat_R - floor(ident_mat_R)) == 0)){
+    stop("ident_mat must be a matrix of integer entries only!")
+  }
+
+  if(any(ident_mat_R < 0) || any(ident_mat_R > 1)){
+    stop("The elements of ident_mat must be either 1 or zero!")
+  }
+
+  # Bounds check for the NLopt algorithm coefficients #
+
+  if(!is.null(xtol) && !is.na(xtol) && !is.infinite(xtol)){
+
+    if(xtol <= 0){
+      stop("xtol must be strictly positive!")
+    }
+
+  }else{
+    stop("xtol cannot be set to NULL/NaN/Inf!")
+  }
+
+  if(!is.null(stop_val) && !is.na(stop_val) && !is.infinite(stop_val)){
+
+    if(stop_val <= 0){
+      stop("stop_val must be strictly positive!")
+    }
+
+  }else{
+    stop("stop_val cannot be set to NULL/NaN/Inf!")
+  }
+
+  if(!is.null(max_eval) && !is.na(max_eval) && !is.infinite(max_eval)){
+
+    if(max_eval - floor(max_eval) != 0){
+      stop("max_eval must be an integer!")
+    }
+    if(max_eval <= 0){
+      stop("max_eval must be strictly positive!")
+    }
+
+  }else{
+    cat("Warning! max_eval is disabled.")
+    max_eval <- -1
+  }
+
+  # Algorithm-type check #
+
+  if(!(algorithm %in% names(nlopt_algorithms))){
+    stop(paste0(algorithm, " is not a valid algorithm. See PrintAlgorithms() for a list of the available optimisation algorithms."))
+  }
   algorithm_id <- nlopt_algorithms[algorithm]
-  .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, xtol, stop_val, algorithm_id, hessian, step_size, verbose)
+
+  # Bounds check for the parameters for the computation of the hessian #
+
+  if(hessian == 1){
+    hessian <- TRUE
+  }else if(hessian == 0){
+    hessian <- FALSE
+  }else if(!is.logical(hessian)){
+    stop("hessian must be boolean.")
+  }
+
+  if(hessian){
+    if(!is.null(step_size) && !is.na(step_size) && !is.infinite(step_size)){
+
+      if(step_size <= 0){
+        stop("step_size must be strictly positive!")
+      }
+    }else{
+      stop("step_size cannot be set to NULL/NaN/Inf!")
+    }
+  }
+
+  # Check misc. parameters #
+
+  if(verbose == 1){
+    verbose <- TRUE
+  }else if(verbose == 0){
+    verbose <- FALSE
+  }else if(!is.logical(verbose)){
+    stop("verbose must be boolean.")
+  }
+
+  # End error handling block #
+
+  .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ident_mat_R, xtol, stop_val, max_eval, algorithm_id, hessian, step_size, verbose)
+
 }
