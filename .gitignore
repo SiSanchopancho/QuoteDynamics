@@ -11,3 +11,15 @@ test.log
 IBM_quotes_100ms_2021-01-04.RData
 emp_log.log
 empiric_test.R
+.RData
+.Rbuildignore
+.Rhistory
+build.log
+emp_log.log
+empiric_test.R
+output_save.R
+package_builder.R
+QuoteDynamics.Rproj
+test_lab.R
+test_quoteDynOptim.log
+version_info.cpp
