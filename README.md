@@ -17,13 +17,7 @@ The library is not on CRAN yet and must be installed from GitHub.
 
 ### System requirements
 
-| Platform    | NLopt note                                                                   |
-| ----------- | ---------------------------------------------------------------------------- |
-| **Windows** | Pre‑compiled `nlopt.dll` is shipped inside the package.      		     |
-| **Linux**   | Install dev package beforehand, e.g. <br>`sudo apt-get install libnlopt-dev` |
-| **macOS**   | Install via Homebrew: <br>`brew install nlopt`                               |
-
-No manual Eigen/RcppEigen steps are required as CRAN’s RcppEigen is used.
+This package requires RcppEigen for linear algebra routines (Eigen is included via RcppEigen). A minimal version of NLopt is bundled with the package, including only the necessary source files and licensed under the MIT License.
 
 ## Quick start
 
@@ -79,7 +73,7 @@ PrintAlgorithms()
 | Function            | Purpose                                                  |
 | ------------------- | -------------------------------------------------------- |
 | `quoteDynOptim()`   | High‑level R wrapper with argument checks                |
-| `FastOptim()`       | Low‑level C++ routine            			 |
+| `FastOptim()`       | Low‑level C++ routine            			                   |
 | `PrintAlgorithms()` | Prints NLopt algorithm table                             |
 | `nlopt_algorithms`  | Named vector: `"ALG_NAME" = id`                          |
 
