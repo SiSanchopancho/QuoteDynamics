@@ -17,7 +17,8 @@ The library is not on CRAN yet and must be installed from GitHub.
 
 ### System requirements
 
-This package requires RcppEigen for linear algebra routines (Eigen is included via RcppEigen). A minimal version of NLopt is bundled with the package, including only the necessary source files and licensed under the MIT License.
+This package requires RcppEigen for linear algebra routines (Eigen is included via RcppEigen).
+This package includes selected source files from the NLopt library (MIT License), distributed under the terms of the license included in `inst/licenses/NLopt_LICENSE.txt`.
 
 ## Quick start
 
@@ -80,7 +81,7 @@ PrintAlgorithms()
 ## License
 
 - Package code: GPL‑3 (or later)
-- NLopt (embedded/shared): LGPL 2.1+
+- NLopt (vendored subset): MIT License
 - Eigen (via RcppEigen): MPL 2.0
 
 See the `LICENSE` file and the original license texts in `inst/licenses/`.
