@@ -32,7 +32,6 @@
 #include <climits>
 #include <Rcpp.h>
 #include <RcppEigen.h>
-#include <Eigen/Eigen>
 #include <nlopt/src/api/nlopt.h>
 #include "QuoteDynamics_types.h"
 #include "Internals/LogLike.h"

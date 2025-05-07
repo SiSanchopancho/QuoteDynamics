@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <cfloat>
 #include <iostream>
-#include <Eigen/Eigen>
+#include <RcppEigen.h>
 
 namespace LogLike {
 
