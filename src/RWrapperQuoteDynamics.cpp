@@ -200,7 +200,7 @@ Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, Nu
     std::vector<double> initial_guess(estimate.data(), estimate.data() + estimate.size()); // Map the Eigen::VectorXd stored data into a std::vector for NLopt
     nlopt_set_min_objective(opt, objective_function, &data); // Creat the minimisation problem
     nlopt_set_xtol_rel(opt, xtol); // Set step-tolerance
-    nlopt_set_stopval(opt, stop_val); // Set obj. function value tolerance
+    //nlopt_set_stopval(opt, stop_val); // Set obj. function value tolerance
     nlopt_set_maxeval(opt, max_eval); // Set maximum number of obj. function evaluation
     double minf; // Minimum obj. value at return
 
