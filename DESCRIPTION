@@ -2,8 +2,8 @@ Package: QuoteDynamics
 Type: Package
 Title: Fast Kalman Filter and Smoother Maximum Likelihood Estimator for
         Quote Dynamics Moedls
-Version: 0.0.4
-Date: 2025-05-07
+Version: 0.0.5
+Date: 2025-05-20
 Authors@R: c(
     person("Domenic", "Franjic", email = "IhreEmail@Beispiel.de", role = c("aut", "cre")),
     person("Karsten", "Schweikert", role = "ctb"),

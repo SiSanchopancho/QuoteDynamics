@@ -91,6 +91,37 @@ double objective_function(unsigned n, const double* x, double* grad, void* data)
     return ll;
 }
 
+
+//'  Wrapper to compute the neg-log-like ought to be called from within R for usage with Rs optim()
+//'
+//' @param n Size of the paramter vector
+//' @param x Pointer to the data of the parameter vector
+//' @param grad Pointer to the data of the gradient
+//' @param data Pointer to the data structure that holds additional function parameters of the actual objective function
+//' @return Objective function value of the current parameter estimate
+//' @export
+// [[Rcpp::export]]
+double objFunctionCpp(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, bool log)
+{
+
+  Eigen::VectorXd parameters(Eigen::VectorXd::Map(startR.begin(), startR.size()));
+  Eigen::Map<Eigen::MatrixXd> X(Eigen::MatrixXd::Map(XR.begin(), XR.rows(), XR.cols()));
+  Eigen::Map<Eigen::VectorXd> tau(Eigen::VectorXd::Map(tauR.begin(), tauR.size()));
+  Eigen::Map<Eigen::MatrixXd> ind_matrix(Eigen::MatrixXd::Map(ind_matrix_R.begin(), ind_matrix_R.rows(), ind_matrix_R.cols()));
+
+  // Compute the LL value using parameters as the model parameters
+  double ll = MVLL(parameters, X, tau, ind_matrix);
+
+  if (log) {
+
+    Rcpp::Rcout << "Current objective value: " << ll << std::endl;
+
+  }
+
+  // Return the negative log-likelihood (as NLopt minimizes by default)
+  return ll;
+}
+
 /** Hessian computation
 *
 * @param parameters Reference to the Eigen::VectorXd that holds the (final) parameter estimates

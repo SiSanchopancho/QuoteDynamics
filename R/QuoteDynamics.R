@@ -250,3 +250,118 @@ quoteDynOptim <- function(start, X, tau, ident_mat, xtol = 1e-8, stop_val = 1e-8
   .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ident_mat_R, xtol, stop_val, max_eval, algorithm_id, hessian, step_size, verbose)
 
 }
+
+
+#'  Compute the negative log-likelihood of the quote dynamics model
+#'
+#' @param start Vector of starting values.
+#' @param X Matrix of data.
+#' @param tau Vector of parameter values.
+#' @param ident_mat Selection matrix.
+#' @param verbose Whether to print verbose output.
+#' @return Negative log-likelihood
+#' @export
+#' @examples
+#' start <- c(1, 1)
+#' data <- matrix(rnorm(100), ncol = 10)
+#' tau <- runif(10)
+#' ident_mat <- matrix(round(runif(100 * 10, -0.5, 1.5), 0), 100, 10)
+#' quoteDynNegLL(start, data, tau, ident_mat)
+quoteDynNegLL <- function(start, X, tau, ident_mat, verbose = FALSE) {
+
+  # Start error handling block #
+
+  N <- dim(X)[2]
+  M <- N / 2
+  T <- dim(X)[1]
+
+  # Convert inputs to matrices #
+
+  errorOccurred <- FALSE
+
+  XR <- try(as.matrix(X), silent = TRUE)
+  if (inherits(XR, "try-error")) {
+    errorOccurred <- TRUE
+  }
+
+  # Logic block for handling different input types for the start vector
+
+  if(is.list(start) && !is.data.frame(start)){ # Logic for converting the start values into a matrix if its provided as a named list
+
+    # Check the names of the parameter list
+    if (!setequal(names(start), c("spread","alpha","Cmat.lowerTriangular","sigma","delta1","delta2"))) {
+      stop("An error occurred in the conversion of the starting parameters list. The elements of the starting parameter",
+          "list must follow this naming convention: \n names(start_list) = c(\"spread\", \"alpha\", \"Cmat.lowerTriangular\",",
+          "\"sigma\", \"delta1\", \"delta2\")")
+    }
+
+    # Check the dimensions of the parameters stored in the list
+
+    if (length(start$spread) != M ||
+        length(start$alpha) != 2 * M ||
+        length(start$Cmat.lowerTriangular) != 3 * M ||
+        length(start$sigma) != 1 ||
+        length(start$delta1) != 1 ||
+        length(start$delta2) != 1) {
+      stop("An error occurred in the conversion of the starting parameters list. The parameters appear to have false dimensions.",
+          "Given the data you provided, the elements of start_list should have the following dimensions: |start_list$spread| = ", M,
+          ", |alpha| = ", 2*M, ", |Cmat.lowerTriangular| = ", 3*M, ", |sigma| = ", 1, ", |delta1| = ", 1, ", |delta2| = ", 1)
+    }
+
+    startR <- matrix(NaN, length(unlist(start)), 1)
+    startR[1:M, 1] <- start$spread
+    startR[(M + 1):(3*M), 1] <- start$alpha
+    startR[(3*M + 1):(3*M + 9), 1] <- start$Cmat.lowerTriangular
+    startR[3*M + 10, ] <- start$sigma
+    startR[3*M + 11, ] <- start$delta1
+    startR[3*M + 12, ] <- start$delta2
+
+  }else{ # Logic for converting the start values into a matrix if its provided as a vector/matrix
+
+    startR <- if (!errorOccurred) try(as.matrix(start), silent = TRUE)
+    if (inherits(startR, "try-error")) {
+      errorOccurred <- TRUE
+    }
+
+  }
+
+  tauR <- if (!errorOccurred) try(as.matrix(tau), silent = TRUE) else NULL
+  if (inherits(tauR, "try-error")) {
+    errorOccurred <- TRUE
+  }
+
+  ident_mat_R <- try(matrix(as.numeric(ident_mat), dim(ident_mat)[1], dim(ident_mat)[2]), silent = TRUE)
+  if (inherits(ident_mat_R, "try-error")) {
+    errorOccurred <- TRUE
+  }
+
+  # If an error occurred, terminate
+  if (errorOccurred) {
+    stop("An error occurred in matrix conversion. \"start\", \"X\", \"tau\", and \"ident_mat_R\" must be convertable to matrices. \n")
+  }
+
+  # Dimension checks #
+
+  if(dim(tauR)[1] != T){
+    stop(paste0("tau must be of length ", T, " but is ", dim(tauR)[1]))
+  }
+
+  if(dim(ident_mat_R)[2] != M || dim(ident_mat_R)[1] != T){
+    stop(paste0("ident_mat_R must be of dimensions ", T, "x", M, " but is ", dim(ident_mat_R)[1], "x", dim(ident_mat_R)[2]))
+  }
+
+  # Check of the elements of the indicator matrix
+
+  if(!all((ident_mat_R - floor(ident_mat_R)) == 0)){
+    stop("ident_mat must be a matrix of integer entries only!")
+  }
+
+  if(any(ident_mat_R < 0) || any(ident_mat_R > 1)){
+    stop("The elements of ident_mat must be either 1 or zero!")
+  }
+
+  # End error handling block #
+
+  .Call('_QuoteDynamics_objFunctionCpp', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ident_mat_R, verbose)
+
+}
