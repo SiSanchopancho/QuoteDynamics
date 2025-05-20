@@ -23,6 +23,18 @@
 #' @name QuoteDynamics
 NULL
 
+#'  Wrapper to compute the neg-log-like ought to be called from within R for usage with Rs optim()
+#'
+#' @param n Size of the paramter vector
+#' @param x Pointer to the data of the parameter vector
+#' @param grad Pointer to the data of the gradient
+#' @param data Pointer to the data structure that holds additional function parameters of the actual objective function
+#' @return Objective function value of the current parameter estimate
+#' @export
+objFunctionCpp <- function(startR, XR, tauR, ind_matrix_R, log) {
+    .Call('_QuoteDynamics_objFunctionCpp', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ind_matrix_R, log)
+}
+
 #' FastOptim Function
 #'
 #' Fast KFS MLE implementation

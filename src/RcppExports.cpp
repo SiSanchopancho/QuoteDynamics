@@ -12,6 +12,21 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// objFunctionCpp
+double objFunctionCpp(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, bool log);
+RcppExport SEXP _QuoteDynamics_objFunctionCpp(SEXP startRSEXP, SEXP XRSEXP, SEXP tauRSEXP, SEXP ind_matrix_RSEXP, SEXP logSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericVector >::type startR(startRSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type XR(XRSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type tauR(tauRSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type ind_matrix_R(ind_matrix_RSEXP);
+    Rcpp::traits::input_parameter< bool >::type log(logSEXP);
+    rcpp_result_gen = Rcpp::wrap(objFunctionCpp(startR, XR, tauR, ind_matrix_R, log));
+    return rcpp_result_gen;
+END_RCPP
+}
 // FastOptim
 Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, double xtol, double stop_val, int max_eval, int algorithm_id, bool hessian, double step_size, bool log);
 RcppExport SEXP _QuoteDynamics_FastOptim(SEXP startRSEXP, SEXP XRSEXP, SEXP tauRSEXP, SEXP ind_matrix_RSEXP, SEXP xtolSEXP, SEXP stop_valSEXP, SEXP max_evalSEXP, SEXP algorithm_idSEXP, SEXP hessianSEXP, SEXP step_sizeSEXP, SEXP logSEXP) {
@@ -35,6 +50,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_QuoteDynamics_objFunctionCpp", (DL_FUNC) &_QuoteDynamics_objFunctionCpp, 5},
     {"_QuoteDynamics_FastOptim", (DL_FUNC) &_QuoteDynamics_FastOptim, 11},
     {NULL, NULL, 0}
 };
