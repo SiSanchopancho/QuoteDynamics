@@ -171,7 +171,7 @@ Eigen::MatrixXd ComputeHessian(const Eigen::VectorXd& parameters, void* data, do
 //' @return Returns minimum value (changes start in place)
 //' @export
 // [[Rcpp::export]]
-Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, double xtol, double stop_val, int max_eval, int algorithm_id, bool hessian, double step_size, bool log) {
+Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, double rel_xtol, double rel_ftol, int max_eval, int algorithm_id, bool hessian, double step_size, bool log) {
     
     /* Initialisation */
 
@@ -199,8 +199,8 @@ Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, Nu
     opt = nlopt_create(static_cast<nlopt_algorithm>(algorithm_id), estimate.size()); // Set the optimisation algorithm and the dimensionality (number of parameters) of the problem
     std::vector<double> initial_guess(estimate.data(), estimate.data() + estimate.size()); // Map the Eigen::VectorXd stored data into a std::vector for NLopt
     nlopt_set_min_objective(opt, objective_function, &data); // Creat the minimisation problem
-    nlopt_set_xtol_rel(opt, xtol); // Set step-tolerance
-    //nlopt_set_stopval(opt, stop_val); // Set obj. function value tolerance
+    nlopt_set_xtol_rel(opt, rel_xtol); // Set step-tolerance
+    nlopt_set_ftol_rel(opt, rel_ftol); // Set obj. function value tolerance
     nlopt_set_maxeval(opt, max_eval); // Set maximum number of obj. function evaluation
     double minf; // Minimum obj. value at return
 

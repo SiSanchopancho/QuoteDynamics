@@ -9,8 +9,8 @@ quoteDynOptim(
   X,
   tau,
   ident_mat,
-  xtol = 1e-08,
-  stop_val = 1e-08,
+  rel_xtol = 1e-08,
+  rel_ftol = 1e-08,
   max_eval = 100000L,
   algorithm = "LN_NELDERMEAD",
   hessian = TRUE,
@@ -27,9 +27,9 @@ quoteDynOptim(
 
 \item{ident_mat}{Selection matrix.}
 
-\item{xtol}{Algorithm tolerance.}
+\item{rel_xtol}{Relative parameter change tolerance.}
 
-\item{stop_val}{Stopping value.}
+\item{rel_ftol}{Relative obj. func. tolerance.}
 
 \item{max_eval}{Maximum number of obj. function evaluations.}
 

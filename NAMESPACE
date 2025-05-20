@@ -3,6 +3,8 @@
 export(FastOptim)
 export(PrintAlgorithms)
 export(nlopt_algorithms)
+export(objFunctionCpp)
+export(quoteDynNegLL)
 export(quoteDynOptim)
 importFrom(Rcpp,sourceCpp)
 useDynLib(QuoteDynamics)

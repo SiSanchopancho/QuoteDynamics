@@ -47,7 +47,7 @@ objFunctionCpp <- function(startR, XR, tauR, ind_matrix_R, log) {
 #' @param stop_val Stopping rule
 #' @return Returns minimum value (changes start in place)
 #' @export
-FastOptim <- function(startR, XR, tauR, ind_matrix_R, xtol, stop_val, max_eval, algorithm_id, hessian, step_size, log) {
-    .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ind_matrix_R, xtol, stop_val, max_eval, algorithm_id, hessian, step_size, log)
+FastOptim <- function(startR, XR, tauR, ind_matrix_R, rel_xtol, rel_ftol, max_eval, algorithm_id, hessian, step_size, log) {
+    .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ind_matrix_R, rel_xtol, rel_ftol, max_eval, algorithm_id, hessian, step_size, log)
 }
 

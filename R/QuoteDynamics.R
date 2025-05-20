@@ -63,8 +63,8 @@ PrintAlgorithms <- function() {
 #' @param X Matrix of data.
 #' @param tau Vector of parameter values.
 #' @param ident_mat Selection matrix.
-#' @param xtol Algorithm tolerance.
-#' @param stop_val Stopping value.
+#' @param rel_xtol Relative parameter change tolerance.
+#' @param rel_ftol Relative obj. func. tolerance.
 #' @param max_eval Maximum number of obj. function evaluations.
 #' @param algorithm Character string, the optimization algorithm to use.
 #' @param hessian Whether to compute the hessian matrix.
@@ -78,7 +78,7 @@ PrintAlgorithms <- function() {
 #' tau <- runif(10)
 #' ident_mat <- matrix(round(runif(100 * 10, -0.5, 1.5), 0), 100, 10)
 #' result <- NLoptKFS(start, data, tau, ident_mat)
-quoteDynOptim <- function(start, X, tau, ident_mat, xtol = 1e-8, stop_val = 1e-8, max_eval = 100000L, algorithm = "LN_NELDERMEAD", hessian = TRUE, step_size = 1e-8, verbose = FALSE) {
+quoteDynOptim <- function(start, X, tau, ident_mat, rel_xtol = 1e-8, rel_ftol = 1e-8, max_eval = 100000L, algorithm = "LN_NELDERMEAD", hessian = TRUE, step_size = 1e-8, verbose = FALSE) {
 
   # Start error handling block #
 
@@ -173,24 +173,24 @@ quoteDynOptim <- function(start, X, tau, ident_mat, xtol = 1e-8, stop_val = 1e-8
 
   # Bounds check for the NLopt algorithm coefficients #
 
-  if(!is.null(xtol) && !is.na(xtol) && !is.infinite(xtol)){
+  if(!is.null(rel_xtol) && !is.na(rel_xtol) && !is.infinite(rel_xtol)){
 
-    if(xtol <= 0){
-      stop("xtol must be strictly positive!")
+    if(rel_xtol < 0){
+      stop("rel_xtol must be strictly non-negative!")
     }
 
   }else{
-    stop("xtol cannot be set to NULL/NaN/Inf!")
+    stop("rel_xtol cannot be set to NULL/NaN/Inf!")
   }
 
-  if(!is.null(stop_val) && !is.na(stop_val) && !is.infinite(stop_val)){
+  if(!is.null(rel_ftol) && !is.na(rel_ftol) && !is.infinite(rel_ftol)){
 
-    if(stop_val <= 0){
-      stop("stop_val must be strictly positive!")
+    if(rel_ftol < 0){
+      stop("rel_ftol must be non-negative!")
     }
 
   }else{
-    stop("stop_val cannot be set to NULL/NaN/Inf!")
+    stop("rel_ftol cannot be set to NULL/NaN/Inf!")
   }
 
   if(!is.null(max_eval) && !is.na(max_eval) && !is.infinite(max_eval)){
@@ -247,7 +247,7 @@ quoteDynOptim <- function(start, X, tau, ident_mat, xtol = 1e-8, stop_val = 1e-8
 
   # End error handling block #
 
-  .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ident_mat_R, xtol, stop_val, max_eval, algorithm_id, hessian, step_size, verbose)
+  .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ident_mat_R, rel_xtol, rel_ftol, max_eval, algorithm_id, hessian, step_size, verbose)
 
 }
 
