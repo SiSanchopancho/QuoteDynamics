@@ -82,7 +82,6 @@ PrintAlgorithms()
 
 - Package code: GPL‑3 (or later)
 - NLopt (vendored subset): MIT License
-- Eigen (via RcppEigen): MPL 2.0
 
 See the `LICENSE` file and the original license texts in `inst/licenses/`.
 
