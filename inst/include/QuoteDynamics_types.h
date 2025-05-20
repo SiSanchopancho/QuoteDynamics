@@ -13,6 +13,8 @@ struct Results {
     double min_val;           // Minimum value found by the optimization
     Eigen::VectorXd estimate; // Estimated parameters
     Eigen::MatrixXd hessian;  // Hessian matrix at the optimum
+    int nlopt_return_code;
+    int eval_count;
 };
 
 // Rcpp namespace to enable seamless integration with R

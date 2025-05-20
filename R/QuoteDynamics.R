@@ -102,8 +102,8 @@ quoteDynOptim <- function(start, X, tau, ident_mat, rel_xtol = 1e-8, rel_ftol = 
     # Check the names of the parameter list
     if (!setequal(names(start), c("spread","alpha","Cmat.lowerTriangular","sigma","delta1","delta2"))) {
       stop("An error occurred in the conversion of the starting parameters list. The elements of the starting parameter",
-          "list must follow this naming convention: \n names(start_list) = c(\"spread\", \"alpha\", \"Cmat.lowerTriangular\",",
-          "\"sigma\", \"delta1\", \"delta2\")")
+           "list must follow this naming convention: \n names(start_list) = c(\"spread\", \"alpha\", \"Cmat.lowerTriangular\",",
+           "\"sigma\", \"delta1\", \"delta2\")")
     }
 
     # Check the dimensions of the parameters stored in the list
@@ -115,8 +115,8 @@ quoteDynOptim <- function(start, X, tau, ident_mat, rel_xtol = 1e-8, rel_ftol = 
         length(start$delta1) != 1 ||
         length(start$delta2) != 1) {
       stop("An error occurred in the conversion of the starting parameters list. The parameters appear to have false dimensions.",
-          "Given the data you provided, the elements of start_list should have the following dimensions: |start_list$spread| = ", M,
-          ", |alpha| = ", 2*M, ", |Cmat.lowerTriangular| = ", 3*M, ", |sigma| = ", 1, ", |delta1| = ", 1, ", |delta2| = ", 1)
+           "Given the data you provided, the elements of start_list should have the following dimensions: |start_list$spread| = ", M,
+           ", |alpha| = ", 2*M, ", |Cmat.lowerTriangular| = ", 3*M, ", |sigma| = ", 1, ", |delta1| = ", 1, ", |delta2| = ", 1)
     }
 
     startR <- matrix(NaN, length(unlist(start)), 1)
@@ -247,8 +247,69 @@ quoteDynOptim <- function(start, X, tau, ident_mat, rel_xtol = 1e-8, rel_ftol = 
 
   # End error handling block #
 
-  .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ident_mat_R, rel_xtol, rel_ftol, max_eval, algorithm_id, hessian, step_size, verbose)
+  out <- .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ident_mat_R, rel_xtol, rel_ftol, max_eval, algorithm_id, hessian, step_size, verbose)
 
+  optimisation_status <- ""
+  if(out$nlopt_return_code == 1){
+    optimisation_status <- "NLopt exited succesfully."
+  }else if(out$nlopt_return_code == 2){
+    optimisation_status <- "Objective function stopping value is reached."
+  }else if(out$nlopt_return_code == 3){
+    optimisation_status <- "Objective function relative/absolute stopping criterion is reached."
+  }else if(out$nlopt_return_code == 4){
+    optimisation_status <- "Parameter change relative/absolute stopping criterion is reached."
+  }else if(out$nlopt_return_code == 5){
+    optimisation_status <- "Maximum number of obj. function calls is reached."
+  }else if(out$nlopt_return_code == 6){
+    optimisation_status <- "Maximum computation time is reached."
+  }else if(out$nlopt_return_code == -1){
+    optimisation_status <- "Error: NLopt did not exit succesfully."
+  }else if(out$nlopt_return_code == -2){
+    optimisation_status <- "Error: Invalid arguments. NLopt did not exit succesfully."
+  }else if(out$nlopt_return_code == -3){
+    optimisation_status <- "Error: Insufficient memory. NLopt did not exit succesfully."
+  }else if(out$nlopt_return_code == -4){
+    optimisation_status <- "Warning: NLopt exits due to roundoff errors limited progress. NLopt may not have converged."
+  }else if(out$nlopt_return_code == -5){
+    optimisation_status <- "Warning: Userforced exit. NLopt did not exit succesfully."
+  }
+
+  out_sthree <- structure(list(
+    call = match.call(),
+    minf = out$min_val,
+    estimate = out$estimate,
+    hessian = out$hessian,
+    eval_count = out$eval_count,
+    nlopt_code = out$nlopt_return_code,
+    optimisation_status = optimisation_status
+  ), class = "quoteDynFit")
+
+  return(out_sthree)
+
+}
+
+#'  Summary function for the return object of the optimisation call
+#'
+#' @export
+summary.quoteDynFit <- function(object, ...) {
+  cat("------ QuoteDynamics Estimation Summary ------\n\n")
+  cat("Call: ")
+  print(object$call)
+  cat("\n")
+  cat("##############################################\n")
+  cat("NLopt Return Code:", object$optimisation_status, "\n")
+  cat("Minimum Value of Obj.Func.:", object$min_val, "\n")
+  cat("Number of Evaluations:", object$eval_count, "\n")
+  cat("Estimated Parameters:\n")
+  print(object$estimate)
+  cat("\n")
+  if(object$call$hessian){
+    cat("Hessian:\n")
+    print(object$hessian)
+  }
+  cat("\n")
+  cat("##############################################\n")
+  invisible(object)
 }
 
 
@@ -291,8 +352,8 @@ quoteDynNegLL <- function(start, X, tau, ident_mat, verbose = FALSE) {
     # Check the names of the parameter list
     if (!setequal(names(start), c("spread","alpha","Cmat.lowerTriangular","sigma","delta1","delta2"))) {
       stop("An error occurred in the conversion of the starting parameters list. The elements of the starting parameter",
-          "list must follow this naming convention: \n names(start_list) = c(\"spread\", \"alpha\", \"Cmat.lowerTriangular\",",
-          "\"sigma\", \"delta1\", \"delta2\")")
+           "list must follow this naming convention: \n names(start_list) = c(\"spread\", \"alpha\", \"Cmat.lowerTriangular\",",
+           "\"sigma\", \"delta1\", \"delta2\")")
     }
 
     # Check the dimensions of the parameters stored in the list
@@ -304,8 +365,8 @@ quoteDynNegLL <- function(start, X, tau, ident_mat, verbose = FALSE) {
         length(start$delta1) != 1 ||
         length(start$delta2) != 1) {
       stop("An error occurred in the conversion of the starting parameters list. The parameters appear to have false dimensions.",
-          "Given the data you provided, the elements of start_list should have the following dimensions: |start_list$spread| = ", M,
-          ", |alpha| = ", 2*M, ", |Cmat.lowerTriangular| = ", 3*M, ", |sigma| = ", 1, ", |delta1| = ", 1, ", |delta2| = ", 1)
+           "Given the data you provided, the elements of start_list should have the following dimensions: |start_list$spread| = ", M,
+           ", |alpha| = ", 2*M, ", |Cmat.lowerTriangular| = ", 3*M, ", |sigma| = ", 1, ", |delta1| = ", 1, ", |delta2| = ", 1)
     }
 
     startR <- matrix(NaN, length(unlist(start)), 1)

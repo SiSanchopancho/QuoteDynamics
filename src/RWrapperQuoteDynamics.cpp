@@ -45,6 +45,7 @@ struct OptimData {
     Eigen::VectorXd tau;
     bool log;
     Eigen::MatrixXd ind_matrix;
+    int eval_count;
 };
 
 /** Wrapper template to parse results back into R */
@@ -55,7 +56,9 @@ namespace Rcpp {
         NumericMatrix hessian = Rcpp::wrap(x.hessian);
         return List::create(Named("min_val") = x.min_val,
             Named("estimate") = estimate,
-            Named("hessian") = hessian);
+            Named("hessian") = hessian,
+          Named("nlopt_return_code") = x.nlopt_return_code,
+          Named("eval_count") = x.eval_count);
     }
 }
 
@@ -80,6 +83,7 @@ double objective_function(unsigned n, const double* x, double* grad, void* data)
 
     // Compute the LL value using parameters as the model parameters
     double ll = MVLL(parameters, data_in->X, data_in->tau, data_in->ind_matrix);
+    data_in->eval_count++;
 
     if (data_in->log) {
 
@@ -192,6 +196,7 @@ Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, Nu
     data.tau = tau;
     data.log = log;
     data.ind_matrix = ind_matrix;
+    data.eval_count = 0;
 
     /* NLopt Set-Up */
 
@@ -206,15 +211,15 @@ Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, Nu
 
     /* Optimisation */
 
-    if (nlopt_optimize(opt, estimate.data(), &minf) < 0) { // Logic block for handling the case where NLopt fails
-        Rcpp::stop("NLopt failed!");
-    }
+    nlopt_result optim_outcome = nlopt_optimize(opt, estimate.data(), &minf);
 
     /* Create an output object */
 
     Results out;
     out.min_val = minf;
     out.estimate = estimate;
+    out.nlopt_return_code = optim_outcome;
+    out.eval_count = data.eval_count;
 
     if (hessian) {// Compute hessian
         out.hessian = ComputeHessian(out.estimate, &data, step_size);
