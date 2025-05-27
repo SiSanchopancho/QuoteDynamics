@@ -9,10 +9,15 @@ FastOptim(
   XR,
   tauR,
   ind_matrix_R,
+  day_indicator_R,
   rel_xtol,
   rel_ftol,
   max_eval,
   algorithm_id,
+  compute_se,
+  no_of_bootstraps,
+  length_of_bootstraps,
+  seed,
   hessian,
   step_size,
   log
@@ -27,12 +32,28 @@ FastOptim(
 
 \item{ind_matrix_R}{Identifier matrix}
 
-\item{xtol}{Algorithm tolerance}
+\item{rel_xtol}{Algorithm tolerance}
 
-\item{stop_val}{Stopping rule}
+\item{rel_ftol}{Stopping rule}
+
+\item{algorithm_id}{NLopt algorithm ID}
+
+\item{compute_se}{Whether or not standard eroors should be computed}
+
+\item{no_of_bootstraps}{Number of bootstrap repititions}
+
+\item{length_of_bootstraps}{Length of each bootstrap block}
+
+\item{seed}{Seed used for bootstrapping}
+
+\item{hessian}{Whether or not to compute the hessian}
+
+\item{step_size}{Step size for the computation of the hessian}
+
+\item{log}{Whether or not to print output}
 }
 \value{
-Returns minimum value (changes start in place)
+Returns optimisation object
 }
 \description{
 Fast KFS MLE implementation

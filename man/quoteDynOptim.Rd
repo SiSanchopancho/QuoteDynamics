@@ -13,6 +13,10 @@ quoteDynOptim(
   rel_ftol = 1e-08,
   max_eval = 100000L,
   algorithm = "LN_NELDERMEAD",
+  compute_se = TRUE,
+  no_of_bootstraps = 100,
+  length_of_bootstraps = NULL,
+  seed = 21052025,
   hessian = TRUE,
   step_size = 1e-08,
   verbose = FALSE
@@ -34,6 +38,14 @@ quoteDynOptim(
 \item{max_eval}{Maximum number of obj. function evaluations.}
 
 \item{algorithm}{Character string, the optimization algorithm to use.}
+
+\item{compute_se}{Whether or not standard eroors should be computed}
+
+\item{no_of_bootstraps}{Number of bootstrap repititions}
+
+\item{length_of_bootstraps}{Length of each bootstrap block}
+
+\item{seed}{Seed used for bootstrapping}
 
 \item{hessian}{Whether to compute the hessian matrix.}
 

@@ -53,6 +53,61 @@ PrintAlgorithms <- function() {
   }
 }
 
+checkParameterVector <- function(param, M){
+
+  if(is.list(param) && !is.data.frame(param)){ # Logic for converting the param values into a matrix if its provided as a named list
+
+    # Check the names of the parameter list
+    if (!setequal(names(param), c("spread","alpha","Cmat.lowerTriangular","sigma","delta1","delta2"))) {
+      stop("An error occurred in the conversion of the ", substitute(param), " parameters list. The elements of the ", substitute(param), " parameter",
+           "list must follow this naming convention: \n names(start_list) = c(\"spread\", \"alpha\", \"Cmat.lowerTriangular\",",
+           "\"sigma\", \"delta1\", \"delta2\")")
+    }
+
+    # Check the dimensions of the parameters stored in the list
+
+    if (length(param$spread) != M ||
+        length(param$alpha) != 2 * M ||
+        length(param$Cmat.lowerTriangular) != 3 * M ||
+        length(param$sigma) != 1 ||
+        length(param$delta1) != 1 ||
+        length(param$delta2) != 1) {
+      stop("An error occurred in the conversion of the ", substitute(param), " parameters list. The parameters appear to have false dimensions.",
+           "Given the data provided, the elements of ", substitute(param), " should have the following dimensions: |spread| = ", M,
+           ", |alpha| = ", 2*M, ", |Cmat.lowerTriangular| = ", 3*M, ", |sigma| = ", 1, ", |delta1| = ", 1, ", |delta2| = ", 1)
+    }
+
+    param_out <- matrix(NaN, length(unlist(param)), 1)
+    param_out[1:M, 1] <- param$spread
+    param_out[(M + 1):(3*M), 1] <- param$alpha
+    param_out[(3*M + 1):(6*M), 1] <- param$Cmat.lowerTriangular
+    param_out[6*M + 1, ] <- param$sigma
+    param_out[6*M + 2, ] <- param$delta1
+    param_out[6*M + 3, ] <- param$delta2
+
+  }else{ # Logic for converting the param values into a matrix if its provided as a vector/matrix
+
+    param_out <- try(as.matrix(param), silent = TRUE)
+    if(inherits(param_out, "try-error")){
+      return(param_out)
+    }
+
+    if(((dim(param_out)[1] != (6*M + 3)) && (dim(param_out)[2] != (6*M + 3)))
+       || (dim(param_out)[1] == (6*M + 3) && dim(param_out)[2] != 1)
+       || (dim(param_out)[2] == (6*M + 3) && dim(param_out)[1] != 1)
+       ) {
+      stop(paste0(substitute(param), " must be of dimensions ", (6*M + 3), "x1."))
+    }
+
+    if(dim(param_out)[2] == (6*M + 3)){
+      param_out <- t(param_out)
+    }
+
+  }
+
+  return(param_out)
+}
+
 
 #' Fast Kalman Filter and Smoother Maximum Likelihood Estimation
 #'
@@ -67,6 +122,13 @@ PrintAlgorithms <- function() {
 #' @param rel_ftol Relative obj. func. tolerance.
 #' @param max_eval Maximum number of obj. function evaluations.
 #' @param algorithm Character string, the optimization algorithm to use.
+#' @param upper_bound Upper parameter bounds (only for global optimisers)
+#' @param lower_bound Lower parameter bounds (only for global optimisers)
+#' @param initial_filter_variance Initial Kalman filter state variance
+#' @param compute_se Whether or not standard eroors should be computed
+#' @param no_of_bootstraps Number of bootstrap repititions
+#' @param length_of_bootstraps Length of each bootstrap block
+#' @param seed Seed used for bootstrapping
 #' @param hessian Whether to compute the hessian matrix.
 #' @param step_size Step size for hessian computation.
 #' @param verbose Whether to print verbose output.
@@ -78,62 +140,64 @@ PrintAlgorithms <- function() {
 #' tau <- runif(10)
 #' ident_mat <- matrix(round(runif(100 * 10, -0.5, 1.5), 0), 100, 10)
 #' result <- NLoptKFS(start, data, tau, ident_mat)
-quoteDynOptim <- function(start, X, tau, ident_mat, rel_xtol = 1e-8, rel_ftol = 1e-8, max_eval = 100000L, algorithm = "LN_NELDERMEAD", hessian = TRUE, step_size = 1e-8, verbose = FALSE) {
+quoteDynOptim <- function(
+    start,
+    X,
+    tau,
+    ident_mat,
+    rel_xtol = 1e-8,
+    rel_ftol = 1e-8,
+    max_eval = 100000L,
+    algorithm = "LN_NELDERMEAD",
+    upper_bound = NULL,
+    lower_bound = NULL,
+    initial_filter_variance = 1000,
+    compute_se = TRUE,
+    no_of_bootstraps = 100,
+    length_of_bootstraps = NULL,
+    seed = 21052025,
+    hessian = TRUE,
+    step_size = 1e-8,
+    verbose = FALSE
+) {
 
   # Start error handling block #
 
   N <- dim(X)[2]
   M <- N / 2
+
+  if (N %% 2 != 0) stop("Number of columns of X must be even.")
+
   T <- dim(X)[1]
 
   # Convert inputs to matrices #
 
   errorOccurred <- FALSE
 
-  XR <- try(as.matrix(X), silent = TRUE)
+  if(!is.zoo(X) && !is.xts(X)){
+    stop("X must be a zoo/xts object")
+  }
+
+  # Create date change indicator
+  day_date <- day(time(X))
+  day_change_ind <- c(0, as.integer(day_date[-1] == day_date[-length(day_date)]))
+  date_change_index <- unlist(lapply(which(day_change_ind == 0), function(i) seq(i, i + 49)))
+  if(max(date_change_index) >= length(day_date)){
+    stop("Not enough observations for the last day of the data set. Each day must contain at least 50 Observations.")
+  }
+  day_change_ind[date_change_index] <- 0
+  day_change_ind <- as.matrix(day_change_ind)
+
+  XR <- try(coredata(X), silent = TRUE)
   if (inherits(XR, "try-error")) {
     errorOccurred <- TRUE
   }
 
-  # Logic block for handling different input types for the start vector
+  # Logic block for handling different input types for the start vector #
 
-  if(is.list(start) && !is.data.frame(start)){ # Logic for converting the start values into a matrix if its provided as a named list
-
-    # Check the names of the parameter list
-    if (!setequal(names(start), c("spread","alpha","Cmat.lowerTriangular","sigma","delta1","delta2"))) {
-      stop("An error occurred in the conversion of the starting parameters list. The elements of the starting parameter",
-           "list must follow this naming convention: \n names(start_list) = c(\"spread\", \"alpha\", \"Cmat.lowerTriangular\",",
-           "\"sigma\", \"delta1\", \"delta2\")")
-    }
-
-    # Check the dimensions of the parameters stored in the list
-
-    if (length(start$spread) != M ||
-        length(start$alpha) != 2 * M ||
-        length(start$Cmat.lowerTriangular) != 3 * M ||
-        length(start$sigma) != 1 ||
-        length(start$delta1) != 1 ||
-        length(start$delta2) != 1) {
-      stop("An error occurred in the conversion of the starting parameters list. The parameters appear to have false dimensions.",
-           "Given the data you provided, the elements of start_list should have the following dimensions: |start_list$spread| = ", M,
-           ", |alpha| = ", 2*M, ", |Cmat.lowerTriangular| = ", 3*M, ", |sigma| = ", 1, ", |delta1| = ", 1, ", |delta2| = ", 1)
-    }
-
-    startR <- matrix(NaN, length(unlist(start)), 1)
-    startR[1:M, 1] <- start$spread
-    startR[(M + 1):(3*M), 1] <- start$alpha
-    startR[(3*M + 1):(3*M + 9), 1] <- start$Cmat.lowerTriangular
-    startR[3*M + 10, ] <- start$sigma
-    startR[3*M + 11, ] <- start$delta1
-    startR[3*M + 12, ] <- start$delta2
-
-  }else{ # Logic for converting the start values into a matrix if its provided as a vector/matrix
-
-    startR <- if (!errorOccurred) try(as.matrix(start), silent = TRUE)
-    if (inherits(startR, "try-error")) {
-      errorOccurred <- TRUE
-    }
-
+  startR <- checkParameterVector(start, M)
+  if (inherits(startR, "try-error")) {
+    errorOccurred <- TRUE
   }
 
   tauR <- if (!errorOccurred) try(as.matrix(tau), silent = TRUE) else NULL
@@ -214,6 +278,102 @@ quoteDynOptim <- function(start, X, tau, ident_mat, rel_xtol = 1e-8, rel_ftol = 
   }
   algorithm_id <- nlopt_algorithms[algorithm]
 
+  # Check bounds #
+
+  if(is.null(lower_bound) && is.null(upper_bound)){ # Logic block for unbound optimisation
+
+    # Check whether bounds are disabled but global optimisation should be used
+    if(substr(algorithm, 1, 2) == "GN"){
+      stop(paste0(algorithm, " corresponds to a global optimisation procedure. Upper and lower parameter bounds must be set."))
+    }
+
+    # Create empty dummy matrices so C++ doesn't cry
+    upper_bound_R <- as.matrix(-1, dim(startR)[1], 1)
+    lower_bound_R <- as.matrix(-1, dim(startR)[1], 1)
+
+  }else if((is.null(lower_bound) && !is.null(upper_bound))
+           || (!is.null(lower_bound) && is.null(upper_bound))){ # Logic block for handling misspecification of the bounds
+
+    stop("Either both or no bounds must be provided. Currently, one of the two is parsed as NULL.")
+
+  }else if(!is.null(lower_bound) && !is.null(upper_bound)){ # Logic block for the case where bounds are correctly provided
+
+    # Check whether bounds are enabled but local optimisation should be used
+    if(substr(algorithm, 1, 2) == "LN"){
+      warning(paste0("Warning!", algorithm, " corresponds to a local optimisation procedure. Upper and lower parameter bounds will be ignored."))
+    }
+
+    # Check the validity of the provided upper bound #
+
+    upper_bound_R <- checkParameterVector(upper_bound, M)
+    if (inherits(upper_bound_R, "try-error")) {
+      errorOccurred <- TRUE
+    }
+
+    lower_bound_R <- checkParameterVector(lower_bound, M)
+    if (inherits(lower_bound_R, "try-error")) {
+      errorOccurred <- TRUE
+    }
+
+    # If an error occurred in the transformation of the bounds, terminate
+    if (errorOccurred) {
+      stop("An error occurred in matrix conversion. \"upper_bound\" and \"lower_bound\" must be convertable to matrices. \n")
+    }
+
+  }
+
+  # Check initial KF state variance
+
+  if(initial_filter_variance <= 0){
+    stop("The initial Kalman filter variance must be strictly positive.")
+  }
+
+  # Bounds check for the parameters for the computation of the bootstrap parameters #
+
+  if(compute_se == 1){
+    compute_se <- TRUE
+  }else if(compute_se == 0){
+    compute_se <- FALSE
+  }else if(!is.logical(compute_se)){
+    stop("compute_se must be boolean.")
+  }
+
+  if(compute_se){
+
+    if(!is.null(no_of_bootstraps) && !is.na(no_of_bootstraps) && !is.infinite(no_of_bootstraps)){
+      if(no_of_bootstraps <= 0){
+        stop("no_of_bootstraps must be strictly positive!")
+      }
+    }else{
+      stop("no_of_bootstraps cannot be set to NULL/NaN/Inf!")
+    }
+
+    if(is.null(length_of_bootstraps)){
+      length_of_bootstraps <- floor(T^(1/3))
+      cat("length_of_bootstraps has been set to default floor(T^(1/3)).")
+    }
+
+    if(!is.na(length_of_bootstraps) && !is.infinite(length_of_bootstraps)){
+      if(length_of_bootstraps <= 0){
+        stop("length_of_bootstraps must be strictly positive!")
+      }else if(length_of_bootstraps >= T){
+        stop("length_of_bootstraps must be smaller dim(X)[1]!")
+      }
+    }else{
+      stop("length_of_bootstraps cannot be set to NULL/NaN/Inf!")
+    }
+
+    if(!is.null(seed) && !is.na(seed) && !is.infinite(seed)){
+      if(seed < 0){
+        stop("seed must be strictly positive!")
+      }else if(seed >= 2^32 - 1){
+        stop("seed must be smaller then 2^32 - 1")
+      }
+    }else{
+      stop("seed cannot be set to NULL/NaN/Inf!")
+    }
+  }
+
   # Bounds check for the parameters for the computation of the hessian #
 
   if(hessian == 1){
@@ -247,7 +407,27 @@ quoteDynOptim <- function(start, X, tau, ident_mat, rel_xtol = 1e-8, rel_ftol = 
 
   # End error handling block #
 
-  out <- .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ident_mat_R, rel_xtol, rel_ftol, max_eval, algorithm_id, hessian, step_size, verbose)
+  out <- .Call('_QuoteDynamics_FastOptim',
+               PACKAGE = 'QuoteDynamics',
+               startR,
+               XR,
+               tauR,
+               ident_mat_R,
+               day_change_ind,
+               rel_xtol,
+               rel_ftol,
+               max_eval,
+               algorithm_id,
+               upper_bound_R,
+               lower_bound_R,
+               initial_filter_variance,
+               compute_se,
+               no_of_bootstraps,
+               length_of_bootstraps,
+               seed,
+               hessian,
+               step_size,
+               verbose)
 
   optimisation_status <- ""
   if(out$nlopt_return_code == 1){
@@ -274,10 +454,52 @@ quoteDynOptim <- function(start, X, tau, ident_mat, rel_xtol = 1e-8, rel_ftol = 
     optimisation_status <- "Warning: Userforced exit. NLopt did not exit succesfully."
   }
 
+  # Compute standard errors, 95% confidence intervals, and p-test statistics
+  boot_straps_sorted <- out$boot_straps
+  ses <- c()
+  p_vals <- c()
+  cis <- matrix(NaN, nrow(boot_straps_sorted), 2)
+
+  for(n in seq_len(nrow(boot_straps_sorted))) {
+    boot_straps_sorted[n, ] <- sort(boot_straps_sorted[n, ]) # Sort bootstrap values for confidence intervals
+    ses[n] <- sqrt(var(boot_straps_sorted[n, ])) # Compute standard errors
+    cis[n, 1] <- quantile(boot_straps_sorted[n, ], probs = 0.025) # Extract lower CI
+    cis[n, 2] <- quantile(boot_straps_sorted[n, ], probs = 0.975) # Extract upper CI
+
+    # Compute the p-value
+    p_plus  <- mean(boot_straps_sorted[n, ] >= 0)
+    p_minus <- mean(boot_straps_sorted[n, ] <= 0)
+    p_vals[n] <- max(min(2 * min(p_plus, p_minus), 1), 0)
+  }
+
+  # Naming the output #
+
+  # Construct name vector
+  names <- c(paste0("spread", 1:M),
+             paste0("alpha", 1:(2*M)),
+             paste0("Cmat", 1:(3*M)),
+             "sigma",
+             "delta1",
+             "delta2")
+
+  # Naming the objects
+  names(out$estimate) <- names
+  if(compute_se){
+    names(ses) <- names
+    rownames(cis) <- names
+    colnames(cis) <- c("lower 95%-CI", "upper 95%-CI")
+    names(p_vals) <- names
+    rownames(out$boot_straps) <- names
+  }
+
   out_sthree <- structure(list(
     call = match.call(),
     minf = out$min_val,
     estimate = out$estimate,
+    ses = ses,
+    CIs = cis,
+    p_vals = p_vals,
+    boot_straps = out$boot_straps,
     hessian = out$hessian,
     eval_count = out$eval_count,
     nlopt_code = out$nlopt_return_code,
@@ -292,20 +514,34 @@ quoteDynOptim <- function(start, X, tau, ident_mat, rel_xtol = 1e-8, rel_ftol = 
 #'
 #' @export
 summary.quoteDynFit <- function(object, ...) {
+
   cat("------ QuoteDynamics Estimation Summary ------\n\n")
+  cat("\n")
   cat("Call: ")
   print(object$call)
   cat("\n")
   cat("##############################################\n")
+  cat("\n")
   cat("NLopt Return Code:", object$optimisation_status, "\n")
   cat("Minimum Value of Obj.Func.:", object$min_val, "\n")
   cat("Number of Evaluations:", object$eval_count, "\n")
-  cat("Estimated Parameters:\n")
-  print(object$estimate)
-  cat("\n")
-  if(object$call$hessian){
-    cat("Hessian:\n")
-    print(object$hessian)
+  cat("Estimated Parameters:\n\n")
+  if (isTRUE(object$call$compute_se)) { # Logical block for when ses have been computed
+    # Construct significance stars
+    stars <- symnum(object$p_vals, corr = FALSE, cutpoints = c(0, .001, .01, .05, .1, 1),
+                    symbols = c("***", "**", "*", ".", " "))
+
+    table <- data.frame(Estimate = format(object$estimate, scientific = TRUE, digits = 4),
+                        `95%-CI`= paste0("[", format(object$CIs[, 1], scientific = TRUE, digits = 4),
+                                         ", ", format(object$CIs[, 2], scientific = TRUE, digits = 4),
+                                         "]"),
+                        Sign. = stars,
+                        SE = format(object$ses, scientific = TRUE, digits = 4),
+                        check.names = FALSE)
+    colnames(table)[3] <- ""
+    print(table)
+  } else {
+    print(data.frame(Estimate = object$estimate))
   }
   cat("\n")
   cat("##############################################\n")
@@ -334,56 +570,39 @@ quoteDynNegLL <- function(start, X, tau, ident_mat, verbose = FALSE) {
 
   N <- dim(X)[2]
   M <- N / 2
+
+  if (N %% 2 != 0) stop("Number of columns of X must be even.")
+
   T <- dim(X)[1]
 
   # Convert inputs to matrices #
 
   errorOccurred <- FALSE
 
-  XR <- try(as.matrix(X), silent = TRUE)
+  if(!is.zoo(X) && !is.xts(X)){
+    stop("X must be a zoo/xts object")
+  }
+
+  # Create date change indicator
+  day_date <- day(time(X))
+  day_change_ind <- c(0, as.integer(day_date[-1] == day_date[-length(day_date)]))
+  date_change_index <- unlist(lapply(which(day_change_ind == 0), function(i) seq(i, i + 49)))
+  if(max(date_change_index) >= length(day_date)){
+    stop("Not enough observations for the last day of the data set. Each day must contain at least 50 Observations.")
+  }
+  day_change_ind[date_change_index] <- 0
+  day_change_ind <- as.matrix(day_change_ind)
+
+  XR <- try(coredata(X), silent = TRUE)
   if (inherits(XR, "try-error")) {
     errorOccurred <- TRUE
   }
 
-  # Logic block for handling different input types for the start vector
+  # Logic block for handling different input types for the start vector #
 
-  if(is.list(start) && !is.data.frame(start)){ # Logic for converting the start values into a matrix if its provided as a named list
-
-    # Check the names of the parameter list
-    if (!setequal(names(start), c("spread","alpha","Cmat.lowerTriangular","sigma","delta1","delta2"))) {
-      stop("An error occurred in the conversion of the starting parameters list. The elements of the starting parameter",
-           "list must follow this naming convention: \n names(start_list) = c(\"spread\", \"alpha\", \"Cmat.lowerTriangular\",",
-           "\"sigma\", \"delta1\", \"delta2\")")
-    }
-
-    # Check the dimensions of the parameters stored in the list
-
-    if (length(start$spread) != M ||
-        length(start$alpha) != 2 * M ||
-        length(start$Cmat.lowerTriangular) != 3 * M ||
-        length(start$sigma) != 1 ||
-        length(start$delta1) != 1 ||
-        length(start$delta2) != 1) {
-      stop("An error occurred in the conversion of the starting parameters list. The parameters appear to have false dimensions.",
-           "Given the data you provided, the elements of start_list should have the following dimensions: |start_list$spread| = ", M,
-           ", |alpha| = ", 2*M, ", |Cmat.lowerTriangular| = ", 3*M, ", |sigma| = ", 1, ", |delta1| = ", 1, ", |delta2| = ", 1)
-    }
-
-    startR <- matrix(NaN, length(unlist(start)), 1)
-    startR[1:M, 1] <- start$spread
-    startR[(M + 1):(3*M), 1] <- start$alpha
-    startR[(3*M + 1):(3*M + 9), 1] <- start$Cmat.lowerTriangular
-    startR[3*M + 10, ] <- start$sigma
-    startR[3*M + 11, ] <- start$delta1
-    startR[3*M + 12, ] <- start$delta2
-
-  }else{ # Logic for converting the start values into a matrix if its provided as a vector/matrix
-
-    startR <- if (!errorOccurred) try(as.matrix(start), silent = TRUE)
-    if (inherits(startR, "try-error")) {
-      errorOccurred <- TRUE
-    }
-
+  startR <- checkParameterVector(start, M)
+  if (inherits(startR, "try-error")) {
+    errorOccurred <- TRUE
   }
 
   tauR <- if (!errorOccurred) try(as.matrix(tau), silent = TRUE) else NULL
@@ -423,6 +642,6 @@ quoteDynNegLL <- function(start, X, tau, ident_mat, verbose = FALSE) {
 
   # End error handling block #
 
-  .Call('_QuoteDynamics_objFunctionCpp', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ident_mat_R, verbose)
+  .Call('_QuoteDynamics_objFunctionCpp', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ident_mat_R, day_change_ind, verbose)
 
 }

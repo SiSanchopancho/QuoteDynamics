@@ -2,6 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \docType{package}
 \name{QuoteDynamics}
+\alias{QuoteDynamics-package}
 \alias{QuoteDynamics}
 \title{SPDX-License-Identifier: GPL-3.0-or-later */}
 \description{
@@ -22,4 +23,14 @@ See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with QuoteDynamics.  If not, see <https://www.gnu.org/licenses/>.
+}
+\author{
+\strong{Maintainer}: Domenic Franjic \email{IhreEmail@Beispiel.de}
+
+Other contributors:
+\itemize{
+  \item Karsten Schweikert [contributor]
+  \item Thomas Dimpfl [contributor]
+}
+
 }

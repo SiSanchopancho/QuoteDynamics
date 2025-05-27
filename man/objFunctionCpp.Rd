@@ -4,7 +4,7 @@
 \alias{objFunctionCpp}
 \title{Wrapper to compute the neg-log-like ought to be called from within R for usage with Rs optim()}
 \usage{
-objFunctionCpp(startR, XR, tauR, ind_matrix_R, log)
+objFunctionCpp(startR, XR, tauR, ind_matrix_R, day_indicator_R, log)
 }
 \arguments{
 \item{n}{Size of the paramter vector}

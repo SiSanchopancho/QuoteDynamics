@@ -31,8 +31,8 @@ NULL
 #' @param data Pointer to the data structure that holds additional function parameters of the actual objective function
 #' @return Objective function value of the current parameter estimate
 #' @export
-objFunctionCpp <- function(startR, XR, tauR, ind_matrix_R, log) {
-    .Call('_QuoteDynamics_objFunctionCpp', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ind_matrix_R, log)
+objFunctionCpp <- function(startR, XR, tauR, ind_matrix_R, day_indicator_R, initial_kf_var_cov, log) {
+    .Call('_QuoteDynamics_objFunctionCpp', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ind_matrix_R, day_indicator_R, initial_kf_var_cov, log)
 }
 
 #' FastOptim Function
@@ -43,11 +43,22 @@ objFunctionCpp <- function(startR, XR, tauR, ind_matrix_R, log) {
 #' @param XR Data Matrix
 #' @param tauR Parameter vector
 #' @param ind_matrix_R Identifier matrix
-#' @param xtol Algorithm tolerance
-#' @param stop_val Stopping rule
-#' @return Returns minimum value (changes start in place)
+#' @param rel_xtol Algorithm tolerance
+#' @param rel_ftol Stopping rule
+#' @param algorithm_id NLopt algorithm ID
+#' @param upper_bound_R Upper parameter bounds (only for global optimisers)
+#' @param lower_bound_R Lower parameter bounds (only for global optimisers)
+#' @param initial_kf_var_cov Initial Kalman filter state variance
+#' @param compute_se Whether or not standard eroors should be computed
+#' @param no_of_bootstraps Number of bootstrap repititions
+#' @param length_of_bootstraps Length of each bootstrap block
+#' @param seed Seed used for bootstrapping
+#' @param hessian Whether or not to compute the hessian
+#' @param step_size Step size for the computation of the hessian
+#' @param log Whether or not to print output
+#' @return Returns optimisation object
 #' @export
-FastOptim <- function(startR, XR, tauR, ind_matrix_R, rel_xtol, rel_ftol, max_eval, algorithm_id, hessian, step_size, log) {
-    .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ind_matrix_R, rel_xtol, rel_ftol, max_eval, algorithm_id, hessian, step_size, log)
+FastOptim <- function(startR, XR, tauR, ind_matrix_R, day_indicator_R, rel_xtol, rel_ftol, max_eval, algorithm_id, upper_bound_R, lower_bound_R, initial_kf_var_cov, compute_se, no_of_bootstraps, length_of_bootstraps, seed, hessian, step_size, log) {
+    .Call('_QuoteDynamics_FastOptim', PACKAGE = 'QuoteDynamics', startR, XR, tauR, ind_matrix_R, day_indicator_R, rel_xtol, rel_ftol, max_eval, algorithm_id, upper_bound_R, lower_bound_R, initial_kf_var_cov, compute_se, no_of_bootstraps, length_of_bootstraps, seed, hessian, step_size, log)
 }
 

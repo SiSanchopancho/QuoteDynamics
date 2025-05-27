@@ -13,8 +13,8 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
 // objFunctionCpp
-double objFunctionCpp(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, bool log);
-RcppExport SEXP _QuoteDynamics_objFunctionCpp(SEXP startRSEXP, SEXP XRSEXP, SEXP tauRSEXP, SEXP ind_matrix_RSEXP, SEXP logSEXP) {
+double objFunctionCpp(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, NumericMatrix day_indicator_R, const double& initial_kf_var_cov, bool log);
+RcppExport SEXP _QuoteDynamics_objFunctionCpp(SEXP startRSEXP, SEXP XRSEXP, SEXP tauRSEXP, SEXP ind_matrix_RSEXP, SEXP day_indicator_RSEXP, SEXP initial_kf_var_covSEXP, SEXP logSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -22,14 +22,16 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type XR(XRSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type tauR(tauRSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type ind_matrix_R(ind_matrix_RSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type day_indicator_R(day_indicator_RSEXP);
+    Rcpp::traits::input_parameter< const double& >::type initial_kf_var_cov(initial_kf_var_covSEXP);
     Rcpp::traits::input_parameter< bool >::type log(logSEXP);
-    rcpp_result_gen = Rcpp::wrap(objFunctionCpp(startR, XR, tauR, ind_matrix_R, log));
+    rcpp_result_gen = Rcpp::wrap(objFunctionCpp(startR, XR, tauR, ind_matrix_R, day_indicator_R, initial_kf_var_cov, log));
     return rcpp_result_gen;
 END_RCPP
 }
 // FastOptim
-Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, double rel_xtol, double rel_ftol, int max_eval, int algorithm_id, bool hessian, double step_size, bool log);
-RcppExport SEXP _QuoteDynamics_FastOptim(SEXP startRSEXP, SEXP XRSEXP, SEXP tauRSEXP, SEXP ind_matrix_RSEXP, SEXP rel_xtolSEXP, SEXP rel_ftolSEXP, SEXP max_evalSEXP, SEXP algorithm_idSEXP, SEXP hessianSEXP, SEXP step_sizeSEXP, SEXP logSEXP) {
+Results FastOptim(NumericVector startR, NumericMatrix XR, NumericVector tauR, NumericMatrix ind_matrix_R, NumericMatrix day_indicator_R, double rel_xtol, double rel_ftol, int max_eval, int algorithm_id, NumericVector upper_bound_R, NumericVector lower_bound_R, double initial_kf_var_cov, bool compute_se, int no_of_bootstraps, int length_of_bootstraps, int seed, bool hessian, double step_size, bool log);
+RcppExport SEXP _QuoteDynamics_FastOptim(SEXP startRSEXP, SEXP XRSEXP, SEXP tauRSEXP, SEXP ind_matrix_RSEXP, SEXP day_indicator_RSEXP, SEXP rel_xtolSEXP, SEXP rel_ftolSEXP, SEXP max_evalSEXP, SEXP algorithm_idSEXP, SEXP upper_bound_RSEXP, SEXP lower_bound_RSEXP, SEXP initial_kf_var_covSEXP, SEXP compute_seSEXP, SEXP no_of_bootstrapsSEXP, SEXP length_of_bootstrapsSEXP, SEXP seedSEXP, SEXP hessianSEXP, SEXP step_sizeSEXP, SEXP logSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -37,21 +39,29 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericMatrix >::type XR(XRSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type tauR(tauRSEXP);
     Rcpp::traits::input_parameter< NumericMatrix >::type ind_matrix_R(ind_matrix_RSEXP);
+    Rcpp::traits::input_parameter< NumericMatrix >::type day_indicator_R(day_indicator_RSEXP);
     Rcpp::traits::input_parameter< double >::type rel_xtol(rel_xtolSEXP);
     Rcpp::traits::input_parameter< double >::type rel_ftol(rel_ftolSEXP);
     Rcpp::traits::input_parameter< int >::type max_eval(max_evalSEXP);
     Rcpp::traits::input_parameter< int >::type algorithm_id(algorithm_idSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type upper_bound_R(upper_bound_RSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type lower_bound_R(lower_bound_RSEXP);
+    Rcpp::traits::input_parameter< double >::type initial_kf_var_cov(initial_kf_var_covSEXP);
+    Rcpp::traits::input_parameter< bool >::type compute_se(compute_seSEXP);
+    Rcpp::traits::input_parameter< int >::type no_of_bootstraps(no_of_bootstrapsSEXP);
+    Rcpp::traits::input_parameter< int >::type length_of_bootstraps(length_of_bootstrapsSEXP);
+    Rcpp::traits::input_parameter< int >::type seed(seedSEXP);
     Rcpp::traits::input_parameter< bool >::type hessian(hessianSEXP);
     Rcpp::traits::input_parameter< double >::type step_size(step_sizeSEXP);
     Rcpp::traits::input_parameter< bool >::type log(logSEXP);
-    rcpp_result_gen = Rcpp::wrap(FastOptim(startR, XR, tauR, ind_matrix_R, rel_xtol, rel_ftol, max_eval, algorithm_id, hessian, step_size, log));
+    rcpp_result_gen = Rcpp::wrap(FastOptim(startR, XR, tauR, ind_matrix_R, day_indicator_R, rel_xtol, rel_ftol, max_eval, algorithm_id, upper_bound_R, lower_bound_R, initial_kf_var_cov, compute_se, no_of_bootstraps, length_of_bootstraps, seed, hessian, step_size, log));
     return rcpp_result_gen;
 END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_QuoteDynamics_objFunctionCpp", (DL_FUNC) &_QuoteDynamics_objFunctionCpp, 5},
-    {"_QuoteDynamics_FastOptim", (DL_FUNC) &_QuoteDynamics_FastOptim, 11},
+    {"_QuoteDynamics_objFunctionCpp", (DL_FUNC) &_QuoteDynamics_objFunctionCpp, 7},
+    {"_QuoteDynamics_FastOptim", (DL_FUNC) &_QuoteDynamics_FastOptim, 19},
     {NULL, NULL, 0}
 };
 

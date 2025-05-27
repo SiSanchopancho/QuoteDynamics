@@ -13,11 +13,11 @@ Description: QuoteDynamics is an R package that provides fast maximum‑likeliho
 License: GPL-3
 SystemRequirements: NLopt (>= 2.4.2) - not required for Windows as it
         is included in the package
-Imports: Rcpp (>= 1.0.0)
+Imports: Rcpp (>= 1.0.0), zoo, xts, lubridate
 LinkingTo: Rcpp, RcppEigen
 Depends: R (>= 3.5.0)
 Encoding: UTF-8
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 LazyData: true
 Suggests: knitr, rmarkdown
 VignetteBuilder: knitr, rmarkdown

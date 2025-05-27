@@ -15,6 +15,7 @@ struct Results {
     Eigen::MatrixXd hessian;  // Hessian matrix at the optimum
     int nlopt_return_code;
     int eval_count;
+    Eigen::MatrixXd boot_straps; // Store bootstrapped results
 };
 
 // Rcpp namespace to enable seamless integration with R

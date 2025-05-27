@@ -22,3 +22,5 @@ QuoteDynamics.Rproj
 test_lab.R
 test_quoteDynOptim.log
 version_info.cpp
+test_setup.RData
+IBM_twodays.RData
