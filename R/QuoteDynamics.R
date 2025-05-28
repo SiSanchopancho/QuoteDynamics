@@ -372,6 +372,10 @@ quoteDynOptim <- function(
     }else{
       stop("seed cannot be set to NULL/NaN/Inf!")
     }
+  }else{
+    no_of_bootstraps <- 1
+    length_of_bootstraps <- 2
+    seed <- 21052025
   }
 
   # Bounds check for the parameters for the computation of the hessian #
